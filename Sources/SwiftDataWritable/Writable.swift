@@ -36,8 +36,23 @@
 ///   mutation. Ordinary `Writable*` surfaces swallow autosave failures.
 /// - Parameter throws: When `true`, the macro generates the corresponding
 ///   `ThrowsWritable*` surface and autosave failures are thrown to the caller.
+/// - Parameter transaction: A typed autosave hook that wraps writable
+///   mutations when `autosave` is enabled.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable(autosave: Bool = false, throws: Bool = false) =
+  #externalMacro(
+    module: "SwiftDataWritableMacros",
+    type: "WritableMacro"
+  )
+
+/// Adds a projected mutation or write companion with a typed autosave
+/// transaction hook.
+@attached(peer, names: prefixed(`$`), arbitrary)
+public macro Writable<Model>(
+  autosave: Bool = false,
+  throws: Bool = false,
+  transaction: WritableTransaction<Model>
+) =
   #externalMacro(
     module: "SwiftDataWritableMacros",
     type: "WritableMacro"
@@ -63,6 +78,19 @@ public macro Writable<Root, Value: Comparable>(
   autosave: Bool = false,
   throws: Bool = false,
   mutableBy keyPath: ReferenceWritableKeyPath<Root, Value>
+) =
+  #externalMacro(
+    module: "SwiftDataWritableMacros",
+    type: "WritableMacro"
+  )
+
+/// Adds a projected reorder companion with a typed autosave transaction hook.
+@attached(peer, names: prefixed(`$`), arbitrary)
+public macro Writable<Root, Value: Comparable, Model>(
+  autosave: Bool = false,
+  throws: Bool = false,
+  mutableBy keyPath: ReferenceWritableKeyPath<Root, Value>,
+  transaction: WritableTransaction<Model>
 ) =
   #externalMacro(
     module: "SwiftDataWritableMacros",

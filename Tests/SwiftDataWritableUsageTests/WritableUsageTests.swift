@@ -52,6 +52,22 @@ private final class NoteDocument {
   }
 }
 
+private extension WritableTransaction where Model == Person {
+  static var testTransaction: Self {
+    Self { _, _, mutation in
+      try mutation()
+    }
+  }
+}
+
+private extension WritableTransaction where Model == Book {
+  static var testTransaction: Self {
+    Self { _, _, mutation in
+      try mutation()
+    }
+  }
+}
+
 private struct WritablePeopleView: View {
   @Writable
   @Query(sort: \Person.name)
@@ -124,6 +140,35 @@ private struct ThrowsAutosavePeopleView: View {
   }
 }
 
+private struct TransactionPeopleView: View {
+  @Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.testTransaction)
+  @Query(sort: \Person.name)
+  private var persons: [Person]
+
+  var body: some View {
+    Button("Add") {
+      try? $persons.append(Person(name: "Saved Person"))
+    }
+  }
+}
+
+private struct TransactionKeyPathPeopleView: View {
+  @Writable(
+    autosave: true,
+    throws: true,
+    mutableBy: \Person.priority,
+    transaction: WritableTransaction<Person>.testTransaction
+  )
+  @Query(sort: \Person.priority)
+  private var persons: [Person]
+
+  var body: some View {
+    Button("Move") {
+      try? $persons.move(fromOffsets: IndexSet(integer: 0), toOffset: 1)
+    }
+  }
+}
+
 private struct WritablePersonView: View {
   @Writable
   private var person: Person
@@ -135,7 +180,7 @@ private struct WritablePersonView: View {
   var body: some View {
     Text(person.name)
       .onAppear {
-        $person.write { person, _ in
+        try? $person.write { person, _ in
           person.name = "Writable Person"
         }
       }
@@ -153,7 +198,7 @@ private struct AutosaveWritablePersonView: View {
   var body: some View {
     Text(person.name)
       .onAppear {
-        $person.write { person, _ in
+        try? $person.write { person, _ in
           person.name = "Autosave Writable Person"
         }
       }
@@ -178,6 +223,24 @@ private struct ThrowsAutosaveWritablePersonView: View {
   }
 }
 
+private struct TransactionWritablePersonView: View {
+  @Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.testTransaction)
+  private var person: Person
+
+  init(person: Person) {
+    self.person = person
+  }
+
+  var body: some View {
+    Text(person.name)
+      .onAppear {
+        try? $person.write { person, _ in
+          person.name = "Transaction Writable Person"
+        }
+      }
+  }
+}
+
 private struct OptionalWritablePersonView: View {
   @Writable
   private var person: Person?
@@ -189,7 +252,7 @@ private struct OptionalWritablePersonView: View {
   var body: some View {
     Text(person?.name ?? "")
       .onAppear {
-        $person?.write { person, _ in
+        try? $person?.write { person, _ in
           person.name = "Optional Writable Person"
         }
       }
@@ -233,7 +296,7 @@ private struct WritableBookRelationshipView: View {
       .onAppear {
         $book.tags.append(tag)
         $book.tags[0].documents.append(document)
-        $book.tags[0].documents[0].write { document, _ in
+        try? $book.tags[0].documents[0].write { document, _ in
           document.title = "Writable Document"
         }
       }
@@ -278,6 +341,31 @@ private struct BindableThrowsWritableBookRelationshipView: View {
     Color.clear
       .onAppear {
         if let writable = try? $book.throwsWritable(autosave: true) {
+          try? writable.tags.append(tag)
+        }
+      }
+  }
+}
+
+private struct BindableTransactionWritableBookRelationshipView: View {
+  @Writable
+  @Bindable
+  private var book: Book
+
+  private let tag: Tag
+
+  init(book: Book, tag: Tag) {
+    self.book = book
+    self.tag = tag
+  }
+
+  var body: some View {
+    Color.clear
+      .onAppear {
+        if let writable = try? $book.throwsWritable(
+          autosave: true,
+          transaction: WritableTransaction<Book>.testTransaction
+        ) {
           try? writable.tags.append(tag)
         }
       }
@@ -349,15 +437,19 @@ struct WritableUsageTests {
     _ = AutosavePeopleView()
     _ = AutosaveKeyPathPeopleView()
     _ = ThrowsAutosavePeopleView()
+    _ = TransactionPeopleView()
+    _ = TransactionKeyPathPeopleView()
     _ = WritablePersonView(person: person)
     _ = AutosaveWritablePersonView(person: person)
     _ = ThrowsAutosaveWritablePersonView(person: person)
+    _ = TransactionWritablePersonView(person: person)
     _ = OptionalWritablePersonView(person: person)
     _ = BindableWritablePersonView(person: person)
     _ = WritableBookRelationshipView(book: book, tag: tag, document: document)
     _ = AutosaveWritableBookRelationshipView(book: book, tag: tag)
     _ = BindableWritableBookRelationshipView(book: book, tag: tag)
     _ = BindableThrowsWritableBookRelationshipView(book: book, tag: tag)
+    _ = BindableTransactionWritableBookRelationshipView(book: book, tag: tag)
   }
 
   @MainActor

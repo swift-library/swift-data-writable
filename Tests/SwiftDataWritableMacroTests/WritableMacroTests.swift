@@ -159,6 +159,36 @@ struct WritableMacroTests {
     )
   }
 
+  @Test func transactionQueryExpansionPassesTransaction() throws {
+    assertMacroExpansion(
+      """
+      struct PeopleView {
+          @Writable(autosave: true, transaction: .peopleTransaction)
+          @Query(sort: \\Person.name)
+          private var persons: [Person]
+      }
+      """,
+      expandedSource: """
+        struct PeopleView {
+            @Query(sort: \\Person.name)
+            private var persons: [Person]
+
+            private var __macro_local_23_personsWritableContextfMu_ = SwiftDataWritable._WritableModelContextReader()
+
+            private var `$persons`: SwiftDataWritable.WritableModelCollection<[Person]> {
+                SwiftDataWritable.WritableModelCollection(
+                    value: persons,
+                    context: __macro_local_23_personsWritableContextfMu_.context,
+                    autosave: true,
+                    transaction: .peopleTransaction
+                )
+            }
+        }
+        """,
+      macros: testMacros
+    )
+  }
+
   @Test func autosaveReorderableExpansionGeneratesWritableKeyPathCollection() throws {
     assertMacroExpansion(
       """
@@ -248,6 +278,37 @@ struct WritableMacroTests {
     )
   }
 
+  @Test func transactionThrowsReorderableExpansionPassesTransaction() throws {
+    assertMacroExpansion(
+      """
+      struct PeopleView {
+          @Writable(autosave: true, throws: true, mutableBy: \\Person.priority, transaction: .peopleTransaction)
+          @Query(sort: \\Person.priority)
+          fileprivate var persons: [Person]
+      }
+      """,
+      expandedSource: """
+        struct PeopleView {
+            @Query(sort: \\Person.priority)
+            fileprivate var persons: [Person]
+
+            private var __macro_local_23_personsWritableContextfMu_ = SwiftDataWritable._WritableModelContextReader()
+
+            fileprivate var `$persons`: SwiftDataWritable.KeyPathThrowsWritableModelCollection<[Person]> {
+                SwiftDataWritable.KeyPathThrowsWritableModelCollection(
+                    value: persons,
+                    context: __macro_local_23_personsWritableContextfMu_.context,
+                    autosave: true,
+                    transaction: .peopleTransaction,
+                    mutableBy: \\Person.priority
+                )
+            }
+        }
+        """,
+      macros: testMacros
+    )
+  }
+
   @Test func singleModelExpansion() throws {
     assertMacroExpansion(
       """
@@ -294,6 +355,34 @@ struct WritableMacroTests {
                     value: person,
                     context: __macro_local_22_personWritableContextfMu_.context,
                     autosave: true
+                )
+            }
+        }
+        """,
+      macros: testMacros
+    )
+  }
+
+  @Test func transactionSingleModelExpansionPassesTransaction() throws {
+    assertMacroExpansion(
+      """
+      struct PersonView {
+          @Writable(autosave: true, throws: true, transaction: .personTransaction)
+          private var person: Person
+      }
+      """,
+      expandedSource: """
+        struct PersonView {
+            private var person: Person
+
+            private var __macro_local_22_personWritableContextfMu_ = SwiftDataWritable._WritableModelContextReader()
+
+            private var `$person`: SwiftDataWritable.ThrowsWritableModel<Person> {
+                SwiftDataWritable.ThrowsWritableModel(
+                    value: person,
+                    context: __macro_local_22_personWritableContextfMu_.context,
+                    autosave: true,
+                    transaction: .personTransaction
                 )
             }
         }
@@ -356,6 +445,38 @@ struct WritableMacroTests {
                     value: model,
                     context: __macro_local_22_personWritableContextfMu_.context,
                     autosave: true
+                )
+            }
+        }
+        """,
+      macros: testMacros
+    )
+  }
+
+  @Test func transactionOptionalSingleModelExpansionPassesTransaction() throws {
+    assertMacroExpansion(
+      """
+      struct PersonView {
+          @Writable(autosave: true, transaction: .personTransaction)
+          var person: Person?
+      }
+      """,
+      expandedSource: """
+        struct PersonView {
+            var person: Person?
+
+            private var __macro_local_22_personWritableContextfMu_ = SwiftDataWritable._WritableModelContextReader()
+
+            var `$person`: SwiftDataWritable.WritableModel<Person>? {
+                guard let model = person else {
+                    return nil
+                }
+
+                return SwiftDataWritable.WritableModel(
+                    value: model,
+                    context: __macro_local_22_personWritableContextfMu_.context,
+                    autosave: true,
+                    transaction: .personTransaction
                 )
             }
         }

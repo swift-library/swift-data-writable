@@ -73,7 +73,7 @@ struct WritableRelationshipCollectionTests {
     let actions = WritableModel(value: book, context: context)
 
     actions.tags[0].documents.append(document)
-    let title = actions.tags[0].documents[0].write { document, _ in
+    let title = try actions.tags[0].documents[0].write { document, _ in
       document.title = "Published"
       return document.title
     }
@@ -96,7 +96,7 @@ struct WritableRelationshipCollectionTests {
     let actions = WritableModel(value: book, context: context)
 
     actions.tags[0].documents.append(document)
-    actions.tags[0].documents[0].write { document, _ in
+    try actions.tags[0].documents[0].write { document, _ in
       document.title = "Published"
     }
     try actions.save()
@@ -158,7 +158,7 @@ struct WritableRelationshipCollectionTests {
     let actions = WritableModel(value: book, context: context, autosave: true)
 
     actions.tags[0].documents.append(document)
-    let title = actions.tags[0].documents[0].write { document, _ in
+    let title = try actions.tags[0].documents[0].write { document, _ in
       document.title = "Published"
       return document.title
     }
@@ -170,6 +170,64 @@ struct WritableRelationshipCollectionTests {
     let verificationContext = ModelContext(container)
     let books = try fetchBooks(in: verificationContext)
     #expect(books.first?.tags.first?.documents.map(\.title) == ["Published"])
+  }
+
+  @MainActor
+  @Test func relationshipAppendUsesRootTransaction() throws {
+    let context = try makeRelationshipContext()
+    let book = Book(title: "Library")
+    let tag = Tag(name: "Swift")
+    context.insert(book)
+    var transactionCalls = 0
+    let transaction = WritableTransaction<Book> { _, models, mutation in
+      transactionCalls += 1
+      #expect(models.map(\.persistentModelID) == [book.persistentModelID])
+      try mutation()
+    }
+    let actions = WritableModel(
+      value: book,
+      context: context,
+      autosave: true,
+      transaction: transaction
+    )
+
+    actions.tags.append(tag)
+
+    #expect(transactionCalls == 1)
+    #expect(book.tags.map(\.name) == ["Swift"])
+    #expect(context.hasChanges)
+  }
+
+  @MainActor
+  @Test func relationshipSubscriptWrapsRootTransactionForChildModel() throws {
+    let context = try makeRelationshipContext()
+    let book = Book(title: "Library")
+    let tag = Tag(name: "Swift")
+    let document = NoteDocument(title: "Draft")
+    context.insert(book)
+    book.tags.append(tag)
+    tag.documents.append(document)
+    try context.save()
+    var transactionCalls = 0
+    let transaction = WritableTransaction<Book> { _, models, mutation in
+      transactionCalls += 1
+      #expect(models.map(\.persistentModelID) == [book.persistentModelID])
+      try mutation()
+    }
+    let actions = WritableModel(
+      value: book,
+      context: context,
+      autosave: true,
+      transaction: transaction
+    )
+
+    try actions.tags[0].documents[0].write { document, _ in
+      document.title = "Published"
+    }
+
+    #expect(transactionCalls == 1)
+    #expect(document.title == "Published")
+    #expect(context.hasChanges)
   }
 }
 

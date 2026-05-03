@@ -14,25 +14,40 @@ extension WritableModelCollection where Base: Collection {
 
   /// Deletes models at offsets in the current query snapshot.
   public func remove(atOffsets offsets: IndexSet) {
-    for offset in offsets.sorted(by: >) {
+    let models = offsets.sorted(by: >).compactMap { offset -> Element? in
       guard
-        let index = value.index(value.startIndex, offsetBy: offset, limitedBy: value.endIndex),
+        let index = value.index(
+          value.startIndex,
+          offsetBy: offset,
+          limitedBy: value.endIndex
+        ),
         index != value.endIndex
       else {
-        continue
+        return nil
       }
 
-      context.delete(value[index])
+      return value[index]
     }
 
-    _autosave()
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: models
+    ) {
+      for model in models {
+        context.delete(model)
+      }
+    }
   }
 
-  private func _autosave() {
-    guard autosave else {
-      return
-    }
-
-    try? context.save()
+  /// Returns a writable projection for a model in the current query snapshot.
+  public subscript(position: Base.Index) -> WritableModel<Element> {
+    WritableModel(
+      value: value[position],
+      context: context,
+      autosave: autosave,
+      transaction: transaction
+    )
   }
 }

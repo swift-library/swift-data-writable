@@ -18,46 +18,79 @@ where Base.Element: PersistentModel {
   public let context: ModelContext
   /// Whether mutation operations should attempt a best-effort save.
   public let autosave: Bool
+  /// Optional autosave transaction hook for affected collection elements.
+  public let transaction: WritableTransaction<Element>?
 
   /// Creates a writable surface for a query snapshot.
-  public init(value: Base, context: ModelContext, autosave: Bool = false) {
+  public init(
+    value: Base,
+    context: ModelContext,
+    autosave: Bool = false,
+    transaction: WritableTransaction<Element>? = nil
+  ) {
     self.value = value
     self.context = context
     self.autosave = autosave
+    self.transaction = transaction
   }
 
   /// Inserts a model into the current `ModelContext`.
   public func append(_ model: Element) {
-    context.insert(model)
-    _autosave()
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [model]
+    ) {
+      context.insert(model)
+    }
   }
 
   /// Inserts a model into the current `ModelContext`.
   public func insert(_ model: Element) {
-    context.insert(model)
-    _autosave()
+    append(model)
   }
 
   /// Inserts each model in the sequence into the current `ModelContext`.
   public func append<S: Sequence>(contentsOf models: S) where S.Element == Element {
-    for model in models {
-      context.insert(model)
+    let insertedModels = Array(models)
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: insertedModels
+    ) {
+      for model in insertedModels {
+        context.insert(model)
+      }
     }
-    _autosave()
   }
 
   /// Deletes a model from the current `ModelContext`.
   public func delete(_ model: Element) {
-    context.delete(model)
-    _autosave()
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [model]
+    ) {
+      context.delete(model)
+    }
   }
 
   /// Deletes every model in the current query snapshot.
   public func deleteAll() {
-    for model in value {
-      context.delete(model)
+    let deletedModels = Array(value)
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: deletedModels
+    ) {
+      for model in deletedModels {
+        context.delete(model)
+      }
     }
-    _autosave()
   }
 
   /// Saves the underlying `ModelContext`.
@@ -66,26 +99,29 @@ where Base.Element: PersistentModel {
   }
 
   /// Runs a write closure against the underlying `ModelContext`.
-  public func write(_ body: (ModelContext) throws -> Void) rethrows {
-    try body(context)
-    _autosave()
+  public func write(_ body: (ModelContext) throws -> Void) throws {
+    try _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: Array(value)
+    ) {
+      try body(context)
+    }
   }
 
   /// Runs a write closure with the current query snapshot and underlying context.
   @discardableResult
   public func write<Result>(
     _ body: (Base, ModelContext) throws -> Result
-  ) rethrows -> Result {
-    let result = try body(value, context)
-    _autosave()
-    return result
-  }
-
-  private func _autosave() {
-    guard autosave else {
-      return
+  ) throws -> Result {
+    try _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: Array(value)
+    ) {
+      try body(value, context)
     }
-
-    try? context.save()
   }
 }

@@ -97,13 +97,42 @@ struct WritableModelCollectionTests {
     let context = try makeContext()
     let actions = WritableModelCollection(value: [Person](), context: context)
 
-    let count = actions.write { people, context in
+    let count = try actions.write { people, context in
       context.insert(Person(name: "A"))
       return people.count
     }
 
     #expect(count == 0)
     #expect(try fetchPeople(in: context).map(\.name) == ["A"])
+    #expect(context.hasChanges)
+  }
+
+  @MainActor
+  @Test func subscriptReturnsWritableModelWithCollectionTransaction() throws {
+    let container = try makeContainer()
+    let context = ModelContext(container)
+    let person = Person(name: "A")
+    context.insert(person)
+    try context.save()
+    var transactionCalls = 0
+    let transaction = WritableTransaction<Person> { _, models, mutation in
+      transactionCalls += 1
+      #expect(models.map(\.persistentModelID) == [person.persistentModelID])
+      try mutation()
+    }
+    let actions = WritableModelCollection(
+      value: [person],
+      context: context,
+      autosave: true,
+      transaction: transaction
+    )
+
+    try actions[0].write { person, _ in
+      person.name = "B"
+    }
+
+    #expect(transactionCalls == 1)
+    #expect(person.name == "B")
     #expect(context.hasChanges)
   }
 }

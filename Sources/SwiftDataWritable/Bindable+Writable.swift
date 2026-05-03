@@ -17,11 +17,15 @@ public extension Bindable where Value: PersistentModel {
   }
 
   /// A writable projection for the bound model.
-  func writable(autosave: Bool = false) throws -> WritableModel<Value> {
+  func writable(
+    autosave: Bool = false,
+    transaction: WritableTransaction<Value>? = nil
+  ) throws -> WritableModel<Value> {
     try WritableModel(
       value: wrappedValue,
       context: attachedModelContext(),
-      autosave: autosave
+      autosave: autosave,
+      transaction: transaction
     )
   }
 
@@ -33,11 +37,15 @@ public extension Bindable where Value: PersistentModel {
   }
 
   /// An error-transparent writable projection for the bound model.
-  func throwsWritable(autosave: Bool = false) throws -> ThrowsWritableModel<Value> {
+  func throwsWritable(
+    autosave: Bool = false,
+    transaction: WritableTransaction<Value>? = nil
+  ) throws -> ThrowsWritableModel<Value> {
     try ThrowsWritableModel(
       value: wrappedValue,
       context: attachedModelContext(),
-      autosave: autosave
+      autosave: autosave,
+      transaction: transaction
     )
   }
 

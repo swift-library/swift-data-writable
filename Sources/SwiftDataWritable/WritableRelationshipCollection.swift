@@ -23,6 +23,8 @@ where Root: PersistentModel,
   public let context: ModelContext
   /// Whether mutation operations should attempt a best-effort save.
   public let autosave: Bool
+  /// Optional root autosave transaction hook.
+  public let transaction: WritableTransaction<Root>?
 
   /// The current relationship collection value.
   public var value: Base {
@@ -34,12 +36,14 @@ where Root: PersistentModel,
     root: Root,
     keyPath: ReferenceWritableKeyPath<Root, Base>,
     context: ModelContext,
-    autosave: Bool = false
+    autosave: Bool = false,
+    transaction: WritableTransaction<Root>? = nil
   ) {
     self.root = root
     self.keyPath = keyPath
     self.context = context
     self.autosave = autosave
+    self.transaction = transaction
   }
 
   /// Appends a model to the owner relationship collection.
@@ -107,7 +111,8 @@ where Root: PersistentModel,
     WritableModel(
       value: value[position],
       context: context,
-      autosave: autosave
+      autosave: autosave,
+      transaction: transaction?.wrapping(root: root)
     )
   }
 
@@ -117,33 +122,42 @@ where Root: PersistentModel,
   }
 
   /// Runs a write closure against the underlying `ModelContext`.
-  public func write(_ body: (ModelContext) throws -> Void) rethrows {
-    try body(context)
-    _autosave()
+  public func write(_ body: (ModelContext) throws -> Void) throws {
+    try _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [root]
+    ) {
+      try body(context)
+    }
   }
 
   /// Runs a write closure with the current relationship collection and context.
   @discardableResult
   public func write<Result>(
     _ body: (Base, ModelContext) throws -> Result
-  ) rethrows -> Result {
-    let result = try body(value, context)
-    _autosave()
-    return result
+  ) throws -> Result {
+    try _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [root]
+    ) {
+      try body(value, context)
+    }
   }
 
   private func update(_ body: (inout Base) -> Void) {
-    var relationship = root[keyPath: keyPath]
-    body(&relationship)
-    root[keyPath: keyPath] = relationship
-    _autosave()
-  }
-
-  private func _autosave() {
-    guard autosave else {
-      return
+    try? _performWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [root]
+    ) {
+      var relationship = root[keyPath: keyPath]
+      body(&relationship)
+      root[keyPath: keyPath] = relationship
     }
-
-    try? context.save()
   }
 }

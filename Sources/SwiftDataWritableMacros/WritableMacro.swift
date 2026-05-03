@@ -28,6 +28,12 @@ public struct WritableMacro: PeerMacro {
     guard let throwsSaveErrors = node.throwsSaveErrors(context: context) else {
       return []
     }
+    let transactionArgument = node.transactionExpression.map { expression in
+      ",\n        transaction: \(expression)"
+    } ?? ""
+    let mutableTransactionArgument = node.transactionExpression.map { expression in
+      ",\n        transaction: \(expression)"
+    } ?? ""
 
     if case .bindableModel = property.kind {
       if node.isMutableWritable {
@@ -57,7 +63,7 @@ public struct WritableMacro: PeerMacro {
             SwiftDataWritable.\(raw: projectionType)(
                 value: \(raw: property.name),
                 context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")
+                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
             )
         }
         """
@@ -75,7 +81,7 @@ public struct WritableMacro: PeerMacro {
             return SwiftDataWritable.\(raw: projectionType)(
                 value: model,
                 context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")
+                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
             )
         }
         """
@@ -97,7 +103,7 @@ public struct WritableMacro: PeerMacro {
               SwiftDataWritable.\(raw: projectionType)(
                   value: \(raw: property.name),
                   context: \(raw: contextName).context,
-                  autosave: \(raw: autosave ? "true" : "false")
+                  autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
               )
           }
           """
@@ -114,7 +120,7 @@ public struct WritableMacro: PeerMacro {
             SwiftDataWritable.\(raw: projectionType)(
                 value: \(raw: property.name),
                 context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false"),
+                autosave: \(raw: autosave ? "true" : "false")\(raw: mutableTransactionArgument),
                 mutableBy: \(mutableByExpression)
             )
         }
@@ -133,6 +139,16 @@ extension AttributeSyntax {
 
     return arguments.first { argument in
       argument.label?.text == "mutableBy"
+    }?.expression
+  }
+
+  fileprivate var transactionExpression: ExprSyntax? {
+    guard case .argumentList(let arguments) = arguments else {
+      return nil
+    }
+
+    return arguments.first { argument in
+      argument.label?.text == "transaction"
     }?.expression
   }
 
