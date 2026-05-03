@@ -140,7 +140,7 @@ model type:
 
 ```swift
 extension WritableTransaction where Model == Document {
-  static var bookWriteback: Self {
+  static var writeback: Self {
     Self { context, documents, mutation in
       guard let document = documents.first else {
         try mutation()

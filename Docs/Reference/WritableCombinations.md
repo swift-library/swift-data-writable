@@ -242,7 +242,7 @@ boundaries once, while projection methods stay thin:
 @Writable(
   autosave: true,
   throws: true,
-  transaction: WritableTransaction<Document>.bookWriteback
+  transaction: WritableTransaction<Document>.writeback
 )
 private var document: Document
 ```
