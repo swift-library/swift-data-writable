@@ -39,10 +39,12 @@ macro that adds a `$property` companion backed by SwiftUI's current
 | `@Writable @Query var items: [Model]` | `WritableModelCollection<[Model]>` | Query snapshot mutation through `ModelContext`. |
 | `@Writable(autosave: true) @Query var items: [Model]` | `WritableModelCollection<[Model]>` | Query mutation plus best-effort autosave. |
 | `@Writable(autosave: true, throws: true) @Query var items: [Model]` | `ThrowsWritableModelCollection<[Model]>` | Query mutation plus throwing autosave. |
+| `@Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.domainSave) @Query var items: [Person]` | `ThrowsWritableModelCollection<[Person]>` | Query mutation plus domain-owned autosave transaction. |
 | `@Writable(mutableBy:) @Query var items: [Model]` | `KeyPathWritableModelCollection<[Model]>` | Query mutation plus persisted `.onMove`. |
 | `@Writable(autosave: true, throws: true, mutableBy:) @Query var items: [Model]` | `KeyPathThrowsWritableModelCollection<[Model]>` | Persisted `.onMove` plus throwing autosave. |
 | `@Writable var model: Model` | `WritableModel<Model>` | Single model write and relationship-chain entry point. |
 | `@Writable(autosave: true, throws: true) var model: Model` | `ThrowsWritableModel<Model>` | Single model write plus throwing autosave. |
+| `@Writable(autosave: true, transaction: WritableTransaction<Person>.domainSave) var person: Person` | `WritableModel<Person>` | Single model write plus domain-owned best-effort autosave transaction. |
 | `@Writable var model: Model?` | `WritableModel<Model>?` | Optional single model write; use optional chaining. |
 | `@Writable @Bindable var model: Model` | no generated peer | SwiftUI keeps `$model`; bridge with `try $model.writable(...)` or `try $model.throwsWritable(...)`. |
 | `$model.relationship` | `WritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation. |
@@ -65,9 +67,24 @@ try $persons.save()                                  // explicit save, always th
 @Writable(autosave: true, throws: true) var tag: Tag // autosave failure is thrown
 ```
 
-Ordinary `Writable*` mutation methods are non-throwing. If `autosave` is true
-and SwiftData save fails, the automatic save error is swallowed. Explicit
-`save()` still throws.
+When `autosave` is true and a typed `WritableTransaction<Model>` is supplied,
+the transaction owns the around-mutation save boundary. SwiftDataWritable calls
+the transaction and does not also call `context.save()`:
+
+```swift
+@Writable(
+    autosave: true,
+    throws: true,
+    transaction: WritableTransaction<Document>.bookWriteback
+)
+var document: Document
+```
+
+Ordinary `Writable*` built-in mutation methods are non-throwing. If `autosave`
+is true and SwiftData save or a transaction fails after mutation, the automatic
+save error is swallowed. Explicit `save()` still throws. `write { ... }` is a
+throwing API because the body can throw and a transaction can reject the
+mutation before it runs.
 
 `ThrowsWritable*` mutation methods are throwing. If `autosave` is true and
 SwiftData save fails, the error is thrown. `@Writable(throws: true)` without
@@ -122,13 +139,13 @@ integer values.
 @Writable
 private var book: Book
 
-$book.write { book, _ in
+try $book.write { book, _ in
     book.title = "Updated"
 }
 
 $book.tags.append(tag)
 $book.tags[0].documents.append(document)
-$book.tags[0].documents[0].write { document, _ in
+try $book.tags[0].documents[0].write { document, _ in
     document.title = "Updated"
 }
 ```
@@ -167,6 +184,17 @@ try $person.throwsWritable(autosave: true).write { person, _ in
 }
 ```
 
+Both bridge methods accept a typed transaction:
+
+```swift
+try $person.throwsWritable(
+    autosave: true,
+    transaction: WritableTransaction<Person>.domainSave
+).write { person, _ in
+    person.name = "Updated"
+}
+```
+
 The bridge reads `person.modelContext`. Detached models throw
 `WritableModelError.detachedModel`.
 
@@ -189,8 +217,8 @@ maintaining ordering, validating ownership, or running side effects.
 ```swift
 extension WritableModel where Model == Book {
     @discardableResult
-    func attachTagIfMissing(named name: String) -> Tag {
-        write { book, _ in
+    func attachTagIfMissing(named name: String) throws -> Tag {
+        try write { book, _ in
             if let existing = book.tags.first(where: { $0.name == name }) {
                 return existing
             }

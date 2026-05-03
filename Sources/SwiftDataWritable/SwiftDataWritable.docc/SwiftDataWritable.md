@@ -57,13 +57,28 @@ private var persons: [Person]
 try $persons.append(Person(name: "Saved"))
 ```
 
+Use a typed transaction when a downstream package needs to own autosave
+side effects or save/writeback timing:
+
+```swift
+@Writable(
+    autosave: true,
+    throws: true,
+    transaction: WritableTransaction<Document>.bookWriteback
+)
+private var document: Document
+```
+
+When a transaction is present, SwiftDataWritable invokes the transaction around
+the mutation and does not also call `context.save()`.
+
 Single model properties generate `WritableModel`:
 
 ```swift
 @Writable
 private var person: Person
 
-$person.write { person, _ in
+try $person.write { person, _ in
     person.name = "Updated"
 }
 ```
@@ -80,7 +95,7 @@ private var book: Book
 
 $book.tags.append(tag)
 $book.tags[0].documents.append(document)
-$book.tags[0].documents[0].write { document, _ in
+try $book.tags[0].documents[0].write { document, _ in
     document.title = "Updated"
 }
 ```
@@ -135,7 +150,9 @@ compatible with SwiftUI `.onMove`.
 ### Macros
 
 - ``Writable(autosave:throws:)``
+- ``Writable(autosave:throws:transaction:)``
 - ``Writable(autosave:throws:mutableBy:)``
+- ``Writable(autosave:throws:mutableBy:transaction:)``
 
 ### Writable Runtime
 

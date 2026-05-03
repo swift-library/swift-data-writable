@@ -69,6 +69,10 @@ The runtime also exposes error-transparent autosave surfaces:
 - `ThrowsWritableModel<Model>`.
 - `ThrowsWritableRelationshipCollection<Root, Base>`.
 
+Autosave can be customized with `WritableTransaction<Model>`, a typed
+around-mutation hook that receives the active `ModelContext`, the affected
+models, and the mutation closure.
+
 The macro target generates peer declarations. For a property named `persons`,
 it creates a private context peer and a `$persons` computed projection. The
 context peer stores `SwiftDataWritable._WritableModelContextReader()`, a small
@@ -83,6 +87,8 @@ surface.
 - Keep query snapshot mutation and owner relationship mutation as separate
   surfaces.
 - Keep `autosave` and error exposure as separate choices.
+- Keep autosave side effects in typed `WritableTransaction<Model>` hooks rather
+  than baking domain save/writeback rules into the core projections.
 - Preserve business meaning in ordering fields such as `priority` instead of
   requiring an implementation-specific name.
 - Prefer concrete surface types over public protocols until a shared
@@ -108,6 +114,11 @@ Mutations save after success and throw automatic save failures.
 `@Writable(throws: true)` without autosave is valid, but no automatic save
 happens.
 
+When the macro receives `transaction: WritableTransaction<Model>`, autosave
+uses that transaction instead of the default `context.save()` path. The
+transaction owns the around-mutation boundary and SwiftDataWritable does not
+perform an additional save afterward.
+
 Examples:
 
 ```swift
@@ -118,11 +129,32 @@ try $items.save()                                    // explicit save
 @Writable(autosave: true, throws: true) var tag: Tag // throwing autosave
 ```
 
-`write` follows the same rule: ordinary write helpers rethrow closure errors
-and best-effort autosave; throws write helpers throw either closure errors or
-autosave errors.
+`write` follows the same rule: ordinary write helpers throw body or pre-mutation
+transaction errors and then best-effort autosave; throws write helpers throw
+body, transaction, or autosave errors.
 
 SwiftData's own autosave policy remains SwiftData-owned.
+
+Downstream packages define typed transactions as static surface on the concrete
+model type:
+
+```swift
+extension WritableTransaction where Model == Document {
+  static var bookWriteback: Self {
+    Self { context, documents, mutation in
+      guard let document = documents.first else {
+        try mutation()
+        try context.save()
+        return
+      }
+
+      try document.book.performChanges {
+        try mutation()
+      }
+    }
+  }
+}
+```
 
 ## Relationship Semantics
 
