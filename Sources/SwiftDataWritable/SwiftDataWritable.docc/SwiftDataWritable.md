@@ -64,7 +64,7 @@ side effects or save/writeback timing:
 @Writable(
     autosave: true,
     throws: true,
-    transaction: WritableTransaction<Document>.bookWriteback
+    transaction: WritableTransaction<Document>.writeback
 )
 private var document: Document
 ```

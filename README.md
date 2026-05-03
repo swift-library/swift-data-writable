@@ -76,7 +76,7 @@ the transaction and does not also call `context.save()`:
 @Writable(
     autosave: true,
     throws: true,
-    transaction: WritableTransaction<Document>.bookWriteback
+    transaction: WritableTransaction<Document>.writeback
 )
 var document: Document
 ```
