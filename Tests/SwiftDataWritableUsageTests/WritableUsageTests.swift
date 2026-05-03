@@ -46,9 +46,29 @@ private final class Tag {
 @Model
 private final class NoteDocument {
   var title: String
+  var folder: NoteFolder?
 
-  init(title: String) {
+  init(title: String, folder: NoteFolder? = nil) {
     self.title = title
+    self.folder = folder
+  }
+}
+
+@Model
+private final class NoteFolder {
+  var name: String
+
+  init(name: String) {
+    self.name = name
+  }
+}
+
+@Model
+private final class Bookmark {
+  var document: NoteDocument
+
+  init(document: NoteDocument) {
+    self.document = document
   }
 }
 
@@ -61,6 +81,14 @@ private extension WritableTransaction where Model == Person {
 }
 
 private extension WritableTransaction where Model == Book {
+  static var testTransaction: Self {
+    Self { _, _, mutation in
+      try mutation()
+    }
+  }
+}
+
+private extension WritableTransaction where Model == NoteDocument {
   static var testTransaction: Self {
     Self { _, _, mutation in
       try mutation()
@@ -298,6 +326,42 @@ private struct WritableBookRelationshipView: View {
         $book.tags[0].documents.append(document)
         try? $book.tags[0].documents[0].write { document, _ in
           document.title = "Writable Document"
+        }
+      }
+  }
+}
+
+private struct WritableDocumentFolderRelationshipView: View {
+  @Writable(autosave: true, throws: true, transaction: WritableTransaction<NoteDocument>.testTransaction)
+  private var document: NoteDocument
+
+  init(document: NoteDocument) {
+    self.document = document
+  }
+
+  var body: some View {
+    Color.clear
+      .onAppear {
+        try? $document.folder?.write { folder, _ in
+          folder.name = "Writable Folder"
+        }
+      }
+  }
+}
+
+private struct WritableBookmarkDocumentRelationshipView: View {
+  @Writable
+  private var bookmark: Bookmark
+
+  init(bookmark: Bookmark) {
+    self.bookmark = bookmark
+  }
+
+  var body: some View {
+    Color.clear
+      .onAppear {
+        try? $bookmark.document.write { document, _ in
+          document.title = "Writable Bookmark Document"
         }
       }
   }

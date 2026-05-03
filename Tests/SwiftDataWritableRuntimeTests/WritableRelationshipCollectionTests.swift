@@ -229,6 +229,67 @@ struct WritableRelationshipCollectionTests {
     #expect(document.title == "Published")
     #expect(context.hasChanges)
   }
+
+  @MainActor
+  @Test func optionalSingleRelationshipProjectionReturnsWritableModel() throws {
+    let context = try makeRelationshipContext()
+    let folder = NoteFolder(name: "Drafts")
+    let document = NoteDocument(title: "Draft", folder: folder)
+    context.insert(document)
+    try context.save()
+    let actions = WritableModel(value: document, context: context)
+
+    guard let folderActions = actions.folder else {
+      Issue.record("Expected folder projection")
+      return
+    }
+
+    try folderActions.write { folder, _ in
+      folder.name = "Published"
+    }
+
+    #expect(folder.name == "Published")
+    #expect(context.hasChanges)
+  }
+
+  @MainActor
+  @Test func nilOptionalSingleRelationshipProjectionReturnsNil() throws {
+    let context = try makeRelationshipContext()
+    let document = NoteDocument(title: "Draft")
+    context.insert(document)
+    let actions = WritableModel(value: document, context: context)
+
+    #expect(actions.folder == nil)
+  }
+
+  @MainActor
+  @Test func optionalSingleRelationshipProjectionWrapsRootTransactionForChildModel() throws {
+    let context = try makeRelationshipContext()
+    let folder = NoteFolder(name: "Drafts")
+    let document = NoteDocument(title: "Draft", folder: folder)
+    context.insert(document)
+    try context.save()
+    var transactionCalls = 0
+    let transaction = WritableTransaction<NoteDocument> { _, models, mutation in
+      transactionCalls += 1
+      #expect(models.map(\.persistentModelID) == [document.persistentModelID])
+      try mutation()
+    }
+    let actions = WritableModel(
+      value: document,
+      context: context,
+      autosave: true,
+      transaction: transaction
+    )
+
+    try actions.folder?.write { folder, _ in
+      folder.name = "Published"
+    }
+
+    #expect(transactionCalls == 1)
+    #expect(folder.name == "Published")
+    #expect(context.hasChanges)
+  }
 }
 
 @Suite
@@ -278,5 +339,26 @@ struct ThrowsWritableRelationshipCollectionTests {
     let verificationContext = ModelContext(container)
     let books = try fetchBooks(in: verificationContext)
     #expect(books.first?.tags.first?.documents.map(\.title) == ["Published"])
+  }
+
+  @MainActor
+  @Test func optionalSingleRelationshipProjectionReturnsThrowsWritableModel() throws {
+    let container = try makeRelationshipContainer()
+    let context = ModelContext(container)
+    let folder = NoteFolder(name: "Drafts")
+    let document = NoteDocument(title: "Draft", folder: folder)
+    context.insert(document)
+    try context.save()
+    let actions = ThrowsWritableModel(value: document, context: context, autosave: true)
+
+    try actions.folder?.write { folder, _ in
+      folder.name = "Published"
+    }
+
+    #expect(!context.hasChanges)
+
+    let verificationContext = ModelContext(container)
+    let folders = try fetchFolders(in: verificationContext)
+    #expect(folders.map(\.name) == ["Published"])
   }
 }
