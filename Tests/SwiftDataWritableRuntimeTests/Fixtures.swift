@@ -1,6 +1,10 @@
 import Foundation
 import SwiftData
 
+enum TransactionTestError: Error, Equatable {
+  case failed
+}
+
 @Model
 final class Person {
   var name: String

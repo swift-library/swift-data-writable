@@ -16,12 +16,20 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
   public let context: ModelContext
   /// Whether mutation operations should save after mutation.
   public let autosave: Bool
+  /// Optional autosave transaction hook.
+  public let transaction: WritableTransaction<Model>?
 
   /// Creates an error-transparent writable projection for a model.
-  public init(value: Model, context: ModelContext, autosave: Bool = false) {
+  public init(
+    value: Model,
+    context: ModelContext,
+    autosave: Bool = false,
+    transaction: WritableTransaction<Model>? = nil
+  ) {
     self.value = value
     self.context = context
     self.autosave = autosave
+    self.transaction = transaction
   }
 
   /// Saves the underlying `ModelContext`.
@@ -31,8 +39,14 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
 
   /// Runs a write closure against the underlying `ModelContext`.
   public func write(_ body: (ModelContext) throws -> Void) throws {
-    try body(context)
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [value]
+    ) {
+      try body(context)
+    }
   }
 
   /// Runs a write closure with the projected model and underlying context.
@@ -40,9 +54,14 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
   public func write<Result>(
     _ body: (Model, ModelContext) throws -> Result
   ) throws -> Result {
-    let result = try body(value, context)
-    try _autosave()
-    return result
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [value]
+    ) {
+      try body(value, context)
+    }
   }
 
   /// Returns an error-transparent writable projection for a relationship collection on the model.
@@ -56,15 +75,8 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
       root: value,
       keyPath: keyPath,
       context: context,
-      autosave: autosave
+      autosave: autosave,
+      transaction: transaction
     )
-  }
-
-  private func _autosave() throws {
-    guard autosave else {
-      return
-    }
-
-    try context.save()
   }
 }

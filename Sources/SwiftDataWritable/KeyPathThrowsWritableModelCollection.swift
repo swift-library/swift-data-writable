@@ -19,6 +19,8 @@ where Base.Element: PersistentModel {
   public let context: ModelContext
   /// Whether mutation operations should save after mutation.
   public let autosave: Bool
+  /// Optional autosave transaction hook for affected collection elements.
+  public let transaction: WritableTransaction<Element>?
 
   private let rewriteValues: ([Element], [Element]) -> Void
 
@@ -27,11 +29,13 @@ where Base.Element: PersistentModel {
     value: Base,
     context: ModelContext,
     autosave: Bool = false,
+    transaction: WritableTransaction<Element>? = nil,
     mutableBy keyPath: ReferenceWritableKeyPath<Element, Value>
   ) {
     self.value = value
     self.context = context
     self.autosave = autosave
+    self.transaction = transaction
     self.rewriteValues = { originalModels, movedModels in
       let values = originalModels.map { $0[keyPath: keyPath] }
 
@@ -43,61 +47,102 @@ where Base.Element: PersistentModel {
 
   /// Inserts a model into the current `ModelContext`.
   public func append(_ model: Element) throws {
-    context.insert(model)
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [model]
+    ) {
+      context.insert(model)
+    }
   }
 
   /// Inserts a model into the current `ModelContext`.
   public func insert(_ model: Element) throws {
-    context.insert(model)
-    try _autosave()
+    try append(model)
   }
 
   /// Inserts each model in the sequence into the current `ModelContext`.
   public func append<S: Sequence>(contentsOf models: S) throws where S.Element == Element {
-    for model in models {
-      context.insert(model)
+    let insertedModels = Array(models)
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: insertedModels
+    ) {
+      for model in insertedModels {
+        context.insert(model)
+      }
     }
-    try _autosave()
   }
 
   /// Deletes a model from the current `ModelContext`.
   public func delete(_ model: Element) throws {
-    context.delete(model)
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: [model]
+    ) {
+      context.delete(model)
+    }
   }
 
   /// Deletes every model in the current query snapshot.
   public func deleteAll() throws {
-    for model in value {
-      context.delete(model)
+    let deletedModels = Array(value)
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: deletedModels
+    ) {
+      for model in deletedModels {
+        context.delete(model)
+      }
     }
-    try _autosave()
   }
 
   /// Deletes models at offsets in the current query snapshot.
   public func remove(atOffsets offsets: IndexSet) throws {
-    for offset in offsets.sorted(by: >) {
+    let models = offsets.sorted(by: >).compactMap { offset -> Element? in
       guard
-        let index = value.index(value.startIndex, offsetBy: offset, limitedBy: value.endIndex),
+        let index = value.index(
+          value.startIndex,
+          offsetBy: offset,
+          limitedBy: value.endIndex
+        ),
         index != value.endIndex
       else {
-        continue
+        return nil
       }
 
-      context.delete(value[index])
+      return value[index]
     }
 
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: models
+    ) {
+      for model in models {
+        context.delete(model)
+      }
+    }
   }
 
   /// Reorders the current snapshot, rewrites ordering key path values, and autosaves if requested.
   public func move(fromOffsets source: IndexSet, toOffset destination: Int) throws {
-    guard reorder(fromOffsets: source, toOffset: destination) else {
-      return
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: Array(value)
+    ) {
+      _ = reorder(fromOffsets: source, toOffset: destination)
     }
-
-    try _autosave()
   }
 
   @discardableResult
@@ -120,6 +165,16 @@ where Base.Element: PersistentModel {
     return true
   }
 
+  /// Returns an error-transparent writable projection for a model in the snapshot.
+  public subscript(position: Base.Index) -> ThrowsWritableModel<Element> {
+    ThrowsWritableModel(
+      value: value[position],
+      context: context,
+      autosave: autosave,
+      transaction: transaction
+    )
+  }
+
   /// Saves the underlying `ModelContext`.
   public func save() throws {
     try context.save()
@@ -127,8 +182,14 @@ where Base.Element: PersistentModel {
 
   /// Runs a write closure against the underlying `ModelContext`.
   public func write(_ body: (ModelContext) throws -> Void) throws {
-    try body(context)
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: Array(value)
+    ) {
+      try body(context)
+    }
   }
 
   /// Runs a write closure with the current query snapshot and underlying context.
@@ -136,16 +197,13 @@ where Base.Element: PersistentModel {
   public func write<Result>(
     _ body: (Base, ModelContext) throws -> Result
   ) throws -> Result {
-    let result = try body(value, context)
-    try _autosave()
-    return result
-  }
-
-  private func _autosave() throws {
-    guard autosave else {
-      return
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: Array(value)
+    ) {
+      try body(value, context)
     }
-
-    try context.save()
   }
 }

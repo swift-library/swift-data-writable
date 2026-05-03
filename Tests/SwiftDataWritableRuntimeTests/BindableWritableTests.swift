@@ -58,6 +58,30 @@ struct BindableWritableTests {
   }
 
   @MainActor
+  @Test func bindableWritableBridgeAcceptsTransaction() throws {
+    let context = try makeContext()
+    let person = Person(name: "A")
+    context.insert(person)
+    var transactionCalls = 0
+    let transaction = WritableTransaction<Person> { _, models, mutation in
+      transactionCalls += 1
+      #expect(models.map(\.persistentModelID) == [person.persistentModelID])
+      try mutation()
+    }
+    let bindable = Bindable(wrappedValue: person)
+
+    try bindable.writable(
+      autosave: true,
+      transaction: transaction
+    ).write { person, _ in
+      person.name = "B"
+    }
+
+    #expect(transactionCalls == 1)
+    #expect(person.name == "B")
+  }
+
+  @MainActor
   @Test func bindableWritableThrowsForDetachedModel() throws {
     let bindable = Bindable(wrappedValue: Person(name: "A"))
 

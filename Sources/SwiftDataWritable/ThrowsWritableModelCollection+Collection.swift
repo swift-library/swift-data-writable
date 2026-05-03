@@ -4,25 +4,40 @@ import SwiftData
 extension ThrowsWritableModelCollection where Base: Collection {
   /// Deletes models at offsets in the current query snapshot.
   public func remove(atOffsets offsets: IndexSet) throws {
-    for offset in offsets.sorted(by: >) {
+    let models = offsets.sorted(by: >).compactMap { offset -> Element? in
       guard
-        let index = value.index(value.startIndex, offsetBy: offset, limitedBy: value.endIndex),
+        let index = value.index(
+          value.startIndex,
+          offsetBy: offset,
+          limitedBy: value.endIndex
+        ),
         index != value.endIndex
       else {
-        continue
+        return nil
       }
 
-      context.delete(value[index])
+      return value[index]
     }
 
-    try _autosave()
+    try _performThrowsWritableMutation(
+      context: context,
+      autosave: autosave,
+      transaction: transaction,
+      models: models
+    ) {
+      for model in models {
+        context.delete(model)
+      }
+    }
   }
 
-  private func _autosave() throws {
-    guard autosave else {
-      return
-    }
-
-    try context.save()
+  /// Returns an error-transparent writable projection for a model in the snapshot.
+  public subscript(position: Base.Index) -> ThrowsWritableModel<Element> {
+    ThrowsWritableModel(
+      value: value[position],
+      context: context,
+      autosave: autosave,
+      transaction: transaction
+    )
   }
 }

@@ -72,7 +72,7 @@ struct KeyPathWritableModelCollectionTests {
       mutableBy: \Person.priority
     )
 
-    let count = actions.write { people, context in
+    let count = try actions.write { people, context in
       context.insert(Person(name: "C", priority: 30))
       return people.count
     }
