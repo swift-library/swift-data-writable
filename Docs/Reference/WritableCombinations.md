@@ -21,6 +21,7 @@ boundary; the property shape is.
 | `@Writable @Bindable var model: Model` | No generated `$model` peer | `@Bindable` keeps `$model`. Bridge with `try $model.writable(...)` or `try $model.throwsWritable(...)`. |
 | `@Writable var root: Root`, then `$root.children` | `WritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation. |
 | `@Writable(autosave: true, throws: true) var root: Root`, then `$root.children` | `ThrowsWritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation plus throwing autosave. |
+| `@Writable var root: Root`, then `$root.child` | `WritableModel<Child>` or `WritableModel<Child>?` | Single relationship projection that keeps autosave and transaction propagation. |
 
 The `Model` and relationship element types must conform to `PersistentModel`.
 The macro validates syntax first; generated generic constraints let the compiler
@@ -100,7 +101,8 @@ private var person: Person
 | `save()` | Explicitly calls `context.save()` and throws save failures. |
 | `write { context in ... }` | Runs a write closure; closure errors are rethrown. Autosave is best-effort when enabled. |
 | `write { model, context in ... }` | Same throwing write boundary with the projected model passed in. |
-| `$person.relationship` | Projects a relationship collection when the key path is a writable relationship array. |
+| `$person.relationshipCollection` | Projects a relationship collection when the key path is a writable relationship array. |
+| `$person.singleRelationship` | Projects a related model when the key path points to a `PersistentModel` or `PersistentModel?`. |
 
 `WritableModel` and `ThrowsWritableModel` intentionally do not define domain
 commands such as rename, move, archive, or trash. Downstream packages should add
@@ -194,6 +196,18 @@ This surface expresses membership mutation only. If the relationship operation
 also needs ownership back-links, validation, file-system side effects, explicit
 graph-root insertion/deletion, or domain commands, put those rules in
 downstream extensions or explicit `ModelContext` code.
+
+Single relationship projections do not mutate membership. They read the related
+model and keep the writable chain alive:
+
+```swift
+try $document.folder?.write { folder, _ in
+  folder.name = "Manual"
+}
+```
+
+The projection exists only for `PersistentModel` relationships, so ordinary
+fields remain normal model properties or `@Bindable` bindings.
 
 This follows SwiftData's graph-root rule: insert/save the attached owner graph,
 and SwiftData traverses related models automatically. When the owner model is

@@ -48,6 +48,7 @@ macro that adds a `$property` companion backed by SwiftUI's current
 | `@Writable var model: Model?` | `WritableModel<Model>?` | Optional single model write; use optional chaining. |
 | `@Writable @Bindable var model: Model` | no generated peer | SwiftUI keeps `$model`; bridge with `try $model.writable(...)` or `try $model.throwsWritable(...)`. |
 | `$model.relationship` | `WritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation. |
+| `$model.singleRelationship` | `WritableModel<Child>` or `WritableModel<Child>?` | Single relationship projection that keeps the writable chain and autosave transaction. |
 
 Use plain SwiftData directly when the task is schema design, migration,
 container setup, CloudKit sync, query behavior without a SwiftUI editing
@@ -148,12 +149,17 @@ $book.tags[0].documents.append(document)
 try $book.tags[0].documents[0].write { document, _ in
     document.title = "Updated"
 }
+try $document.folder?.write { folder, _ in
+    folder.name = "Manual"
+}
 ```
 
-Relationship collections mutate the owner relationship array directly. They do
-not call `context.insert` or `context.delete`; query companions keep separate
-snapshot semantics. This follows SwiftData's graph-root rule: insert/save the
-attached owner graph, and SwiftData traverses related models automatically.
+Relationship collections mutate the owner relationship array directly. Single
+relationships project the related model without mutating the parent
+relationship. Relationship projections do not call `context.insert` or
+`context.delete`; query companions keep separate snapshot semantics. This
+follows SwiftData's graph-root rule: insert/save the attached owner graph, and
+SwiftData traverses related models automatically.
 
 ```swift
 let tag = Tag(name: "Swift")
@@ -164,6 +170,16 @@ try $book.save()
 That is still relationship membership semantics. The projection does not
 promise query-style insertion, deletion, validation, inverse maintenance, or
 side effects.
+
+Single relationship projections are intentionally model-only. They let a chain
+continue through `PersistentModel` relationships without competing with
+`@Bindable` for ordinary fields:
+
+```swift
+try $document.folder?.write { folder, _ in
+    folder.name = "Manual"
+}
+```
 
 ## Bindable Bridge
 

@@ -108,6 +108,19 @@ already attached to a context, SwiftData can persist a newly related model
 through the saved object graph, but the relationship projection itself still
 only mutates membership and does not call `context.insert`.
 
+Single relationships continue the writable chain without mutating the parent
+relationship:
+
+```swift
+try $document.folder?.write { folder, _ in
+    folder.name = "Manual"
+}
+```
+
+Single relationship projection exists only for `PersistentModel`
+relationships, so ordinary fields remain normal model properties or
+`@Bindable` bindings.
+
 Downstream extensions should add domain rules, not thin wrappers around
 existing projections. Call direct membership mutations directly:
 

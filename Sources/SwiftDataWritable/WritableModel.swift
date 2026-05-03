@@ -80,4 +80,34 @@ public struct WritableModel<Model: PersistentModel> {
       transaction: transaction
     )
   }
+
+  /// Returns a writable projection for a single relationship on the model.
+  public subscript<Child>(
+    dynamicMember keyPath: KeyPath<Model, Child>
+  ) -> WritableModel<Child>
+  where Child: PersistentModel {
+    WritableModel<Child>(
+      value: value[keyPath: keyPath],
+      context: context,
+      autosave: autosave,
+      transaction: transaction?.wrapping(root: value)
+    )
+  }
+
+  /// Returns a writable projection for an optional single relationship.
+  public subscript<Child>(
+    dynamicMember keyPath: KeyPath<Model, Child?>
+  ) -> WritableModel<Child>?
+  where Child: PersistentModel {
+    guard let child = value[keyPath: keyPath] else {
+      return nil
+    }
+
+    return WritableModel<Child>(
+      value: child,
+      context: context,
+      autosave: autosave,
+      transaction: transaction?.wrapping(root: value)
+    )
+  }
 }

@@ -43,9 +43,20 @@ final class Tag {
 @Model
 final class NoteDocument {
   var title: String
+  var folder: NoteFolder?
 
-  init(title: String) {
+  init(title: String, folder: NoteFolder? = nil) {
     self.title = title
+    self.folder = folder
+  }
+}
+
+@Model
+final class NoteFolder {
+  var name: String
+
+  init(name: String) {
+    self.name = name
   }
 }
 
@@ -84,6 +95,7 @@ func makeRelationshipContainer() throws -> ModelContainer {
     for: Book.self,
     Tag.self,
     NoteDocument.self,
+    NoteFolder.self,
     configurations: configuration
   )
 }
@@ -124,6 +136,15 @@ func fetchBooks(in context: ModelContext) throws -> [Book] {
 func fetchTags(in context: ModelContext) throws -> [Tag] {
   var descriptor = FetchDescriptor<Tag>(
     sortBy: [SortDescriptor(\Tag.name)]
+  )
+  descriptor.includePendingChanges = true
+  return try context.fetch(descriptor)
+}
+
+@MainActor
+func fetchFolders(in context: ModelContext) throws -> [NoteFolder] {
+  var descriptor = FetchDescriptor<NoteFolder>(
+    sortBy: [SortDescriptor(\NoteFolder.name)]
   )
   descriptor.includePendingChanges = true
   return try context.fetch(descriptor)

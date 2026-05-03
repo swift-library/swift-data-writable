@@ -159,8 +159,9 @@ extension WritableTransaction where Model == Document {
 ## Relationship Semantics
 
 `WritableModel` is `@dynamicMemberLookup` for writable relationship collection
-key paths. A `WritableModel` such as `$book` can project `$book.tags`, and
-subscripts keep the chain writable:
+key paths and single `PersistentModel` relationship key paths. A
+`WritableModel` such as `$book` can project `$book.tags`, and subscripts keep
+the chain writable:
 
 ```swift
 $book.tags[0].documents[0]
@@ -172,7 +173,14 @@ The result remains in the writable chain:
 - `$book.tags[0]` is `WritableModel<Tag>`.
 - `$book.tags[0].documents` is
   `WritableRelationshipCollection<Tag, [Document]>`.
+- `$document.folder` is `WritableModel<Folder>?` when `folder` is an optional
+  single relationship.
 - The same chain from `ThrowsWritableModel` returns `ThrowsWritable*` surfaces.
+
+Single relationship projection uses read-only `KeyPath` access because the
+projection does not mutate the parent relationship; it only projects the child
+model. Collection relationship projection uses `ReferenceWritableKeyPath`
+because append/remove operations rewrite the owner collection.
 
 Relationship collections mutate the owner relationship array. They do not
 insert or delete models from the context. `@Query` companions keep separate

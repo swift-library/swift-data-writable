@@ -79,4 +79,34 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
       transaction: transaction
     )
   }
+
+  /// Returns an error-transparent writable projection for a single relationship.
+  public subscript<Child>(
+    dynamicMember keyPath: KeyPath<Model, Child>
+  ) -> ThrowsWritableModel<Child>
+  where Child: PersistentModel {
+    ThrowsWritableModel<Child>(
+      value: value[keyPath: keyPath],
+      context: context,
+      autosave: autosave,
+      transaction: transaction?.wrapping(root: value)
+    )
+  }
+
+  /// Returns an error-transparent writable projection for an optional single relationship.
+  public subscript<Child>(
+    dynamicMember keyPath: KeyPath<Model, Child?>
+  ) -> ThrowsWritableModel<Child>?
+  where Child: PersistentModel {
+    guard let child = value[keyPath: keyPath] else {
+      return nil
+    }
+
+    return ThrowsWritableModel<Child>(
+      value: child,
+      context: context,
+      autosave: autosave,
+      transaction: transaction?.wrapping(root: value)
+    )
+  }
 }
