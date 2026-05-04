@@ -23,7 +23,7 @@ extension ThrowsWritableModelCollection where Base: Collection {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: models
+      value: models
     ) {
       for model in models {
         context.delete(model)
@@ -37,7 +37,7 @@ extension ThrowsWritableModelCollection where Base: Collection {
       value: value[position],
       context: context,
       autosave: autosave,
-      transaction: transaction
+      transaction: transaction?.wrapping(root: [value[position]])
     )
   }
 }

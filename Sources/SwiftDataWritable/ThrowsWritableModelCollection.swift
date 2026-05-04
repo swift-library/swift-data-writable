@@ -16,15 +16,15 @@ where Base.Element: PersistentModel {
   public let context: ModelContext
   /// Whether mutation operations should save after mutation.
   public let autosave: Bool
-  /// Optional autosave transaction hook for affected collection elements.
-  public let transaction: WritableTransaction<Element>?
+  /// Optional autosave transaction hook for affected collection values.
+  public let transaction: WritableTransaction<[Element]>?
 
   /// Creates an error-transparent writable surface for a query snapshot.
   public init(
     value: Base,
     context: ModelContext,
     autosave: Bool = false,
-    transaction: WritableTransaction<Element>? = nil
+    transaction: WritableTransaction<[Element]>? = nil
   ) {
     self.value = value
     self.context = context
@@ -38,7 +38,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [model]
+      value: [model]
     ) {
       context.insert(model)
     }
@@ -56,7 +56,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: insertedModels
+      value: insertedModels
     ) {
       for model in insertedModels {
         context.insert(model)
@@ -70,7 +70,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [model]
+      value: [model]
     ) {
       context.delete(model)
     }
@@ -83,7 +83,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: deletedModels
+      value: deletedModels
     ) {
       for model in deletedModels {
         context.delete(model)
@@ -102,7 +102,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: Array(value)
+      value: Array(value)
     ) {
       try body(context)
     }
@@ -117,7 +117,7 @@ where Base.Element: PersistentModel {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: Array(value)
+      value: Array(value)
     ) {
       try body(value, context)
     }

@@ -72,27 +72,59 @@ private final class Bookmark {
   }
 }
 
-private extension WritableTransaction where Model == Person {
-  static var testTransaction: Self {
-    Self { _, _, mutation in
-      try mutation()
-    }
+private func testPersonTransaction(
+  _ context: ModelContext,
+  _ person: Person,
+  _ mutation: () throws -> Void
+) throws {
+  try mutation()
+}
+
+private func testPeopleTransaction(
+  _ context: ModelContext,
+  _ persons: [Person],
+  _ mutation: () throws -> Void
+) throws {
+  try mutation()
+}
+
+private func testBookTransaction(
+  _ context: ModelContext,
+  _ book: Book,
+  _ mutation: () throws -> Void
+) throws {
+  try mutation()
+}
+
+private func testDocumentTransaction(
+  _ context: ModelContext,
+  _ document: NoteDocument,
+  _ mutation: () throws -> Void
+) throws {
+  try mutation()
+}
+
+private enum TestWriteback {
+  static var transaction: TestWritebackHook {
+    TestWritebackHook()
   }
 }
 
-private extension WritableTransaction where Model == Book {
-  static var testTransaction: Self {
-    Self { _, _, mutation in
-      try mutation()
-    }
+private struct TestWritebackHook {
+  func callAsFunction(
+    _ context: ModelContext,
+    _ person: Person,
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
   }
-}
 
-private extension WritableTransaction where Model == NoteDocument {
-  static var testTransaction: Self {
-    Self { _, _, mutation in
-      try mutation()
-    }
+  func callAsFunction(
+    _ context: ModelContext,
+    _ persons: [Person],
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
   }
 }
 
@@ -112,6 +144,35 @@ private struct WritablePeopleView: View {
 
       Button("Add") {
         $persons.append(Person(name: "New Person"))
+      }
+    }
+  }
+}
+
+private struct OverloadedFunctionTransactionPeopleView: View {
+  @Writable(autosave: true, throws: true, transaction: TestWriteback.transaction)
+  @Query(sort: \Person.name)
+  private var persons: [Person]
+
+  @Writable(autosave: true, throws: true, transaction: TestWriteback.transaction)
+  private var selectedPerson: Person
+
+  init(selectedPerson: Person) {
+    self.selectedPerson = selectedPerson
+  }
+
+  var body: some View {
+    VStack {
+      Button("Rename") {
+        try? $selectedPerson.write { person, _ in
+          person.name = "Renamed"
+        }
+      }
+
+      Button("Batch") {
+        try? $persons.write { persons, _ in
+          persons.first?.name = "Updated"
+        }
       }
     }
   }
@@ -169,7 +230,7 @@ private struct ThrowsAutosavePeopleView: View {
 }
 
 private struct TransactionPeopleView: View {
-  @Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.testTransaction)
+  @Writable(autosave: true, throws: true, transaction: testPeopleTransaction)
   @Query(sort: \Person.name)
   private var persons: [Person]
 
@@ -185,7 +246,7 @@ private struct TransactionKeyPathPeopleView: View {
     autosave: true,
     throws: true,
     mutableBy: \Person.priority,
-    transaction: WritableTransaction<Person>.testTransaction
+    transaction: testPeopleTransaction
   )
   @Query(sort: \Person.priority)
   private var persons: [Person]
@@ -252,7 +313,7 @@ private struct ThrowsAutosaveWritablePersonView: View {
 }
 
 private struct TransactionWritablePersonView: View {
-  @Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.testTransaction)
+  @Writable(autosave: true, throws: true, transaction: testPersonTransaction)
   private var person: Person
 
   init(person: Person) {
@@ -332,7 +393,7 @@ private struct WritableBookRelationshipView: View {
 }
 
 private struct WritableDocumentFolderRelationshipView: View {
-  @Writable(autosave: true, throws: true, transaction: WritableTransaction<NoteDocument>.testTransaction)
+  @Writable(autosave: true, throws: true, transaction: testDocumentTransaction)
   private var document: NoteDocument
 
   init(document: NoteDocument) {
@@ -426,9 +487,10 @@ private struct BindableTransactionWritableBookRelationshipView: View {
   var body: some View {
     Color.clear
       .onAppear {
+        let transaction = WritableTransaction<Book>(body: testBookTransaction)
         if let writable = try? $book.throwsWritable(
           autosave: true,
-          transaction: WritableTransaction<Book>.testTransaction
+          transaction: transaction
         ) {
           try? writable.tags.append(tag)
         }

@@ -36,8 +36,11 @@
 ///   mutation. Ordinary `Writable*` surfaces swallow autosave failures.
 /// - Parameter throws: When `true`, the macro generates the corresponding
 ///   `ThrowsWritable*` surface and autosave failures are thrown to the caller.
-/// - Parameter transaction: A typed autosave hook that wraps writable
-///   mutations when `autosave` is enabled.
+/// - Parameter transaction: A function expression that wraps writable
+///   mutations when `autosave` is enabled. The macro gives the function a
+///   typed context using the source property's model or collection type. Use
+///   a function-like value with `callAsFunction` overloads when one public name
+///   must support multiple value shapes.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable(autosave: Bool = false, throws: Bool = false) =
   #externalMacro(
@@ -45,13 +48,13 @@ public macro Writable(autosave: Bool = false, throws: Bool = false) =
     type: "WritableMacro"
   )
 
-/// Adds a projected mutation or write companion with a typed autosave
-/// transaction hook.
+/// Adds a projected mutation or write companion with an autosave transaction
+/// function hook.
 @attached(peer, names: prefixed(`$`), arbitrary)
-public macro Writable<Model>(
+public macro Writable(
   autosave: Bool = false,
   throws: Bool = false,
-  transaction: WritableTransaction<Model>
+  transaction: Any
 ) =
   #externalMacro(
     module: "SwiftDataWritableMacros",
@@ -84,13 +87,13 @@ public macro Writable<Root, Value: Comparable>(
     type: "WritableMacro"
   )
 
-/// Adds a projected reorder companion with a typed autosave transaction hook.
+/// Adds a projected reorder companion with an autosave transaction function hook.
 @attached(peer, names: prefixed(`$`), arbitrary)
-public macro Writable<Root, Value: Comparable, Model>(
+public macro Writable<Root, Value: Comparable>(
   autosave: Bool = false,
   throws: Bool = false,
   mutableBy keyPath: ReferenceWritableKeyPath<Root, Value>,
-  transaction: WritableTransaction<Model>
+  transaction: Any
 ) =
   #externalMacro(
     module: "SwiftDataWritableMacros",
