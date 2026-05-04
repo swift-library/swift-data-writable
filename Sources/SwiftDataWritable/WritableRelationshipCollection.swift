@@ -127,7 +127,7 @@ where Root: PersistentModel,
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [root]
+      value: root
     ) {
       try body(context)
     }
@@ -142,7 +142,7 @@ where Root: PersistentModel,
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [root]
+      value: root
     ) {
       try body(value, context)
     }
@@ -153,7 +153,7 @@ where Root: PersistentModel,
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [root]
+      value: root
     ) {
       var relationship = root[keyPath: keyPath]
       body(&relationship)

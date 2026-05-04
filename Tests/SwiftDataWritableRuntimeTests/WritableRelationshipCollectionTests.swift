@@ -179,11 +179,11 @@ struct WritableRelationshipCollectionTests {
     let tag = Tag(name: "Swift")
     context.insert(book)
     var transactionCalls = 0
-    let transaction = WritableTransaction<Book> { _, models, mutation in
+    let transaction = WritableTransaction<Book>(body: { _, model, mutation in
       transactionCalls += 1
-      #expect(models.map(\.persistentModelID) == [book.persistentModelID])
+      #expect(model.persistentModelID == book.persistentModelID)
       try mutation()
-    }
+    })
     let actions = WritableModel(
       value: book,
       context: context,
@@ -209,11 +209,11 @@ struct WritableRelationshipCollectionTests {
     tag.documents.append(document)
     try context.save()
     var transactionCalls = 0
-    let transaction = WritableTransaction<Book> { _, models, mutation in
+    let transaction = WritableTransaction<Book>(body: { _, model, mutation in
       transactionCalls += 1
-      #expect(models.map(\.persistentModelID) == [book.persistentModelID])
+      #expect(model.persistentModelID == book.persistentModelID)
       try mutation()
-    }
+    })
     let actions = WritableModel(
       value: book,
       context: context,
@@ -270,11 +270,11 @@ struct WritableRelationshipCollectionTests {
     context.insert(document)
     try context.save()
     var transactionCalls = 0
-    let transaction = WritableTransaction<NoteDocument> { _, models, mutation in
+    let transaction = WritableTransaction<NoteDocument>(body: { _, model, mutation in
       transactionCalls += 1
-      #expect(models.map(\.persistentModelID) == [document.persistentModelID])
+      #expect(model.persistentModelID == document.persistentModelID)
       try mutation()
-    }
+    })
     let actions = WritableModel(
       value: document,
       context: context,

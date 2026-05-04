@@ -48,10 +48,10 @@ struct WritableModelTests {
     let person = Person(name: "A")
     context.insert(person)
     var transactionCalls = 0
-    let transaction = WritableTransaction<Person> { _, _, _ in
+    let transaction = WritableTransaction<Person>(body: { _, _, _ in
       transactionCalls += 1
       throw TransactionTestError.failed
-    }
+    })
     let actions = WritableModel(
       value: person,
       context: context,
@@ -76,13 +76,13 @@ struct WritableModelTests {
     context.insert(person)
     try context.save()
     var transactionCalls = 0
-    let transaction = WritableTransaction<Person> { context, models, mutation in
+    let transaction = WritableTransaction<Person>(body: { context, model, mutation in
       transactionCalls += 1
-      #expect(models.map(\.persistentModelID) == [person.persistentModelID])
+      #expect(model.persistentModelID == person.persistentModelID)
       #expect(!context.hasChanges)
       try mutation()
       #expect(context.hasChanges)
-    }
+    })
     let actions = WritableModel(
       value: person,
       context: context,
@@ -108,10 +108,10 @@ struct WritableModelTests {
     let context = try makeContext()
     let person = Person(name: "A")
     context.insert(person)
-    let transaction = WritableTransaction<Person> { _, _, mutation in
+    let transaction = WritableTransaction<Person>(body: { _, _, mutation in
       try mutation()
       throw TransactionTestError.failed
-    }
+    })
     let actions = WritableModel(
       value: person,
       context: context,
@@ -175,10 +175,10 @@ struct ThrowsWritableModelTests {
     let context = try makeContext()
     let person = Person(name: "A")
     context.insert(person)
-    let transaction = WritableTransaction<Person> { _, _, mutation in
+    let transaction = WritableTransaction<Person>(body: { _, _, mutation in
       try mutation()
       throw TransactionTestError.failed
-    }
+    })
     let actions = ThrowsWritableModel(
       value: person,
       context: context,

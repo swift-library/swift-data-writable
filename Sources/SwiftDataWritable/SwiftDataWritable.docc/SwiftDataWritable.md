@@ -57,20 +57,25 @@ private var persons: [Person]
 try $persons.append(Person(name: "Saved"))
 ```
 
-Use a typed transaction when a downstream package needs to own autosave
-side effects or save/writeback timing:
+Use a transaction function when a downstream package needs to own autosave side
+effects or save/writeback timing:
 
 ```swift
 @Writable(
     autosave: true,
     throws: true,
-    transaction: WritableTransaction<Document>.writeback
+    transaction: Book.writeback
 )
 private var document: Document
 ```
 
-When a transaction is present, SwiftDataWritable invokes the transaction around
-the mutation and does not also call `context.save()`.
+When a transaction function is present, SwiftDataWritable wraps it in a typed
+runtime transaction, invokes it around the mutation, and does not also call
+`context.save()`. The function receives `(ModelContext, Value, mutation)`,
+where `Value` is the single model or the query collection array.
+Use a non-overloaded function directly; use a function-like value with
+`callAsFunction` overloads when one short public name should handle multiple
+value shapes.
 
 Single model properties generate `WritableModel`:
 

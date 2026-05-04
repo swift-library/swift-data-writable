@@ -69,9 +69,10 @@ The runtime also exposes error-transparent autosave surfaces:
 - `ThrowsWritableModel<Model>`.
 - `ThrowsWritableRelationshipCollection<Root, Base>`.
 
-Autosave can be customized with `WritableTransaction<Model>`, a typed
-around-mutation hook that receives the active `ModelContext`, the affected
-models, and the mutation closure.
+Autosave can be customized by passing a transaction function to the macro. The
+macro wraps that function in `WritableTransaction<Value>`, runtime glue that
+receives the active `ModelContext`, the projected value, and the mutation
+closure.
 
 The macro target generates peer declarations. For a property named `persons`,
 it creates a private context peer and a `$persons` computed projection. The
@@ -87,8 +88,8 @@ surface.
 - Keep query snapshot mutation and owner relationship mutation as separate
   surfaces.
 - Keep `autosave` and error exposure as separate choices.
-- Keep autosave side effects in typed `WritableTransaction<Model>` hooks rather
-  than baking domain save/writeback rules into the core projections.
+- Keep autosave side effects in domain transaction functions rather than baking
+  domain save/writeback rules into the core projections.
 - Preserve business meaning in ordering fields such as `priority` instead of
   requiring an implementation-specific name.
 - Prefer concrete surface types over public protocols until a shared
@@ -114,10 +115,10 @@ Mutations save after success and throw automatic save failures.
 `@Writable(throws: true)` without autosave is valid, but no automatic save
 happens.
 
-When the macro receives `transaction: WritableTransaction<Model>`, autosave
-uses that transaction instead of the default `context.save()` path. The
-transaction owns the around-mutation boundary and SwiftDataWritable does not
-perform an additional save afterward.
+When the macro receives `transaction: SomeDomain.save`, autosave uses that
+function instead of the default `context.save()` path. The transaction function
+owns the around-mutation boundary and SwiftDataWritable does not perform an
+additional save afterward.
 
 Examples:
 
@@ -135,26 +136,47 @@ body, transaction, or autosave errors.
 
 SwiftData's own autosave policy remains SwiftData-owned.
 
-Downstream packages define typed transactions as static surface on the concrete
-model type:
+Downstream packages define transaction functions on the concrete domain type
+when the function name is not overloaded:
 
 ```swift
-extension WritableTransaction where Model == Document {
-  static var writeback: Self {
-    Self { context, documents, mutation in
-      guard let document = documents.first else {
-        try mutation()
-        try context.save()
-        return
-      }
+extension Book {
+  static func writeback(
+    _ context: ModelContext,
+    _ document: Document,
+    _ mutation: () throws -> Void
+  ) throws {
+    try document.book.performChanges {
+      try mutation()
+    }
+  }
 
-      try document.book.performChanges {
-        try mutation()
-      }
+  static func writeback(
+    _ context: ModelContext,
+    _ documents: [Document],
+    _ mutation: () throws -> Void
+  ) throws {
+    guard let document = documents.first else {
+      try mutation()
+      try context.save()
+      return
+    }
+
+    try document.book.performChanges {
+      try mutation()
     }
   }
 }
 ```
+
+The public `WritableTransaction<Value>` type remains available for runtime
+bridges such as `@Bindable`, but it is not the primary macro-facing API.
+
+If a domain wants one short public name for several value shapes, it should
+expose a function-like value whose `callAsFunction` methods are overloaded.
+Swift type-checks attribute arguments before macro expansion, so a bare
+overloaded function name cannot use the property type annotation for overload
+resolution.
 
 ## Relationship Semantics
 

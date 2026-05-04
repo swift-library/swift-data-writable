@@ -63,11 +63,11 @@ struct BindableWritableTests {
     let person = Person(name: "A")
     context.insert(person)
     var transactionCalls = 0
-    let transaction = WritableTransaction<Person> { _, models, mutation in
+    let transaction = WritableTransaction<Person>(body: { _, model, mutation in
       transactionCalls += 1
-      #expect(models.map(\.persistentModelID) == [person.persistentModelID])
+      #expect(model.persistentModelID == person.persistentModelID)
       try mutation()
-    }
+    })
     let bindable = Bindable(wrappedValue: person)
 
     try bindable.writable(

@@ -28,13 +28,6 @@ public struct WritableMacro: PeerMacro {
     guard let throwsSaveErrors = node.throwsSaveErrors(context: context) else {
       return []
     }
-    let transactionArgument = node.transactionExpression.map { expression in
-      ",\n        transaction: \(expression)"
-    } ?? ""
-    let mutableTransactionArgument = node.transactionExpression.map { expression in
-      ",\n        transaction: \(expression)"
-    } ?? ""
-
     if case .bindableModel = property.kind {
       if node.isMutableWritable {
         context.diagnose(.mutableByCollectionOnly, at: node)
@@ -57,6 +50,9 @@ public struct WritableMacro: PeerMacro {
       return []
     case .singleModel(let modelType, false):
       let projectionType = throwsSaveErrors ? "ThrowsWritableModel" : "WritableModel"
+      let transactionArgument = node.transactionExpression.map { expression in
+        Self.transactionArgument(expression: expression, valueType: modelType)
+      } ?? ""
       let projection: DeclSyntax =
         """
         \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: modelType)> {
@@ -71,6 +67,9 @@ public struct WritableMacro: PeerMacro {
       return [contextDeclaration, projection]
     case .singleModel(let modelType, true):
       let projectionType = throwsSaveErrors ? "ThrowsWritableModel" : "WritableModel"
+      let transactionArgument = node.transactionExpression.map { expression in
+        Self.transactionArgument(expression: expression, valueType: modelType)
+      } ?? ""
       let projection: DeclSyntax =
         """
         \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: modelType)>? {
@@ -94,6 +93,9 @@ public struct WritableMacro: PeerMacro {
       }
 
       let collectionType = "[\(elementType)]"
+      let transactionArgument = node.transactionExpression.map { expression in
+        Self.transactionArgument(expression: expression, valueType: collectionType)
+      } ?? ""
 
       guard let mutableByExpression = node.mutableByExpression else {
         let projectionType = throwsSaveErrors ? "ThrowsWritableModelCollection" : "WritableModelCollection"
@@ -120,7 +122,7 @@ public struct WritableMacro: PeerMacro {
             SwiftDataWritable.\(raw: projectionType)(
                 value: \(raw: property.name),
                 context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")\(raw: mutableTransactionArgument),
+                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument),
                 mutableBy: \(mutableByExpression)
             )
         }
@@ -128,6 +130,20 @@ public struct WritableMacro: PeerMacro {
 
       return [contextDeclaration, projection]
     }
+  }
+
+  private static func transactionArgument(
+    expression: ExprSyntax,
+    valueType: String
+  ) -> String {
+    """
+    ,
+            transaction: SwiftDataWritable.WritableTransaction<\(valueType)>(
+                body: { context, value, mutation in
+                    try (\(expression))(context, value, mutation)
+                }
+            )
+    """
   }
 }
 

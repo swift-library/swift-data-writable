@@ -43,7 +43,7 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [value]
+      value: value
     ) {
       try body(context)
     }
@@ -58,7 +58,7 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
       context: context,
       autosave: autosave,
       transaction: transaction,
-      models: [value]
+      value: value
     ) {
       try body(value, context)
     }

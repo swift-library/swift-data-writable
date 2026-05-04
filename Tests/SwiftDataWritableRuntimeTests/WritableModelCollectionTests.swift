@@ -115,11 +115,11 @@ struct WritableModelCollectionTests {
     context.insert(person)
     try context.save()
     var transactionCalls = 0
-    let transaction = WritableTransaction<Person> { _, models, mutation in
+    let transaction = WritableTransaction<[Person]>(body: { _, models, mutation in
       transactionCalls += 1
       #expect(models.map(\.persistentModelID) == [person.persistentModelID])
       try mutation()
-    }
+    })
     let actions = WritableModelCollection(
       value: [person],
       context: context,

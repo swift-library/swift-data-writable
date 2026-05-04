@@ -39,12 +39,12 @@ macro that adds a `$property` companion backed by SwiftUI's current
 | `@Writable @Query var items: [Model]` | `WritableModelCollection<[Model]>` | Query snapshot mutation through `ModelContext`. |
 | `@Writable(autosave: true) @Query var items: [Model]` | `WritableModelCollection<[Model]>` | Query mutation plus best-effort autosave. |
 | `@Writable(autosave: true, throws: true) @Query var items: [Model]` | `ThrowsWritableModelCollection<[Model]>` | Query mutation plus throwing autosave. |
-| `@Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.domainSave) @Query var items: [Person]` | `ThrowsWritableModelCollection<[Person]>` | Query mutation plus domain-owned autosave transaction. |
+| `@Writable(autosave: true, throws: true, transaction: PeopleDomain.save) @Query var items: [Person]` | `ThrowsWritableModelCollection<[Person]>` | Query mutation plus domain-owned autosave transaction. |
 | `@Writable(mutableBy:) @Query var items: [Model]` | `KeyPathWritableModelCollection<[Model]>` | Query mutation plus persisted `.onMove`. |
 | `@Writable(autosave: true, throws: true, mutableBy:) @Query var items: [Model]` | `KeyPathThrowsWritableModelCollection<[Model]>` | Persisted `.onMove` plus throwing autosave. |
 | `@Writable var model: Model` | `WritableModel<Model>` | Single model write and relationship-chain entry point. |
 | `@Writable(autosave: true, throws: true) var model: Model` | `ThrowsWritableModel<Model>` | Single model write plus throwing autosave. |
-| `@Writable(autosave: true, transaction: WritableTransaction<Person>.domainSave) var person: Person` | `WritableModel<Person>` | Single model write plus domain-owned best-effort autosave transaction. |
+| `@Writable(autosave: true, transaction: PeopleDomain.save) var person: Person` | `WritableModel<Person>` | Single model write plus domain-owned best-effort autosave transaction. |
 | `@Writable var model: Model?` | `WritableModel<Model>?` | Optional single model write; use optional chaining. |
 | `@Writable @Bindable var model: Model` | no generated peer | SwiftUI keeps `$model`; bridge with `try $model.writable(...)` or `try $model.throwsWritable(...)`. |
 | `$model.relationship` | `WritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation. |
@@ -68,18 +68,42 @@ try $persons.save()                                  // explicit save, always th
 @Writable(autosave: true, throws: true) var tag: Tag // autosave failure is thrown
 ```
 
-When `autosave` is true and a typed `WritableTransaction<Model>` is supplied,
-the transaction owns the around-mutation save boundary. SwiftDataWritable calls
-the transaction and does not also call `context.save()`:
+When `autosave` is true and a transaction function is supplied, that function
+owns the around-mutation save boundary. SwiftDataWritable wraps the function in
+runtime glue, calls it with the current `ModelContext`, value, and mutation
+closure, and does not also call `context.save()`:
 
 ```swift
 @Writable(
     autosave: true,
     throws: true,
-    transaction: WritableTransaction<Document>.writeback
+    transaction: Book.writeback
 )
 var document: Document
 ```
+
+The function signature is inferred from the property shape. A single model
+property receives the model; a query collection receives the current array:
+
+```swift
+static func writeback(
+    _ context: ModelContext,
+    _ document: Document,
+    _ mutation: () throws -> Void
+) throws
+
+static func writeback(
+    _ context: ModelContext,
+    _ documents: [Document],
+    _ mutation: () throws -> Void
+) throws
+```
+
+Pass a non-overloaded function directly. If one public name must support
+multiple value shapes, expose a function-like value with `callAsFunction`
+overloads, such as `Book.writeback`; Swift type-checks macro arguments before
+macro expansion, so a bare overloaded function name has no property-type
+context yet.
 
 Ordinary `Writable*` built-in mutation methods are non-throwing. If `autosave`
 is true and SwiftData save or a transaction fails after mutation, the automatic
@@ -200,12 +224,15 @@ try $person.throwsWritable(autosave: true).write { person, _ in
 }
 ```
 
-Both bridge methods accept a typed transaction:
+The `@Bindable` bridge is a runtime API, so it accepts an explicit
+`WritableTransaction<Value>` wrapper:
 
 ```swift
+let transaction = WritableTransaction<Person>(body: PeopleDomain.save)
+
 try $person.throwsWritable(
     autosave: true,
-    transaction: WritableTransaction<Person>.domainSave
+    transaction: transaction
 ).write { person, _ in
     person.name = "Updated"
 }

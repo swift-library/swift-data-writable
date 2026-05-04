@@ -3,22 +3,22 @@ import SwiftData
 /// A typed around-mutation hook used by writable projections during autosave.
 ///
 /// `WritableTransaction` is invoked only when a projection has `autosave`
-/// enabled. The transaction receives the active context, the models directly
-/// affected by the projection, and a mutation closure. Domain packages can use
+/// enabled. The transaction receives the active context, the projected value
+/// affected by the operation, and a mutation closure. Domain packages can use
 /// this hook to wrap writable mutations in their own save/writeback policy.
 @MainActor
-public struct WritableTransaction<Model: PersistentModel> {
+public struct WritableTransaction<Value> {
   private let perform: @MainActor (
     _ context: ModelContext,
-    _ models: [Model],
+    _ value: Value,
     _ mutation: () throws -> Void
   ) throws -> Void
 
   /// Creates a writable transaction hook.
   public init(
-    _ perform: @escaping @MainActor (
+    body perform: @escaping @MainActor (
       _ context: ModelContext,
-      _ models: [Model],
+      _ value: Value,
       _ mutation: () throws -> Void
     ) throws -> Void
   ) {
@@ -28,29 +28,29 @@ public struct WritableTransaction<Model: PersistentModel> {
   /// Executes the transaction hook.
   public func callAsFunction(
     context: ModelContext,
-    models: [Model],
+    value: Value,
     _ mutation: () throws -> Void
   ) throws {
-    try perform(context, models, mutation)
+    try perform(context, value, mutation)
   }
 
-  func wrapping<Child: PersistentModel>(
-    root: Model
+  func wrapping<Child>(
+    root: Value
   ) -> WritableTransaction<Child> {
-    WritableTransaction<Child> { context, _, mutation in
-      try self(context: context, models: [root]) {
+    WritableTransaction<Child>(body: { context, _, mutation in
+      try self(context: context, value: root) {
         try mutation()
       }
-    }
+    })
   }
 }
 
 @MainActor
-func _performWritableMutation<Model: PersistentModel, Result>(
+func _performWritableMutation<Value, Result>(
   context: ModelContext,
   autosave: Bool,
-  transaction: WritableTransaction<Model>?,
-  models: [Model],
+  transaction: WritableTransaction<Value>?,
+  value: Value,
   _ mutation: () throws -> Result
 ) throws -> Result {
   guard autosave else {
@@ -65,7 +65,7 @@ func _performWritableMutation<Model: PersistentModel, Result>(
 
   let output = _WritableTransactionOutputBox<Result>()
   do {
-    try transaction(context: context, models: models) {
+    try transaction(context: context, value: value) {
       output.set(try mutation())
     }
   } catch {
@@ -80,11 +80,11 @@ func _performWritableMutation<Model: PersistentModel, Result>(
 }
 
 @MainActor
-func _performThrowsWritableMutation<Model: PersistentModel, Result>(
+func _performThrowsWritableMutation<Value, Result>(
   context: ModelContext,
   autosave: Bool,
-  transaction: WritableTransaction<Model>?,
-  models: [Model],
+  transaction: WritableTransaction<Value>?,
+  value: Value,
   _ mutation: () throws -> Result
 ) throws -> Result {
   guard autosave else {
@@ -98,7 +98,7 @@ func _performThrowsWritableMutation<Model: PersistentModel, Result>(
   }
 
   let output = _WritableTransactionOutputBox<Result>()
-  try transaction(context: context, models: models) {
+  try transaction(context: context, value: value) {
     output.set(try mutation())
   }
   return output.requiredValue

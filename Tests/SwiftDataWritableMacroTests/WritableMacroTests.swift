@@ -163,7 +163,7 @@ struct WritableMacroTests {
     assertMacroExpansion(
       """
       struct PeopleView {
-          @Writable(autosave: true, transaction: .peopleTransaction)
+          @Writable(autosave: true, transaction: performPeopleTransaction)
           @Query(sort: \\Person.name)
           private var persons: [Person]
       }
@@ -180,7 +180,11 @@ struct WritableMacroTests {
                     value: persons,
                     context: __macro_local_23_personsWritableContextfMu_.context,
                     autosave: true,
-                    transaction: .peopleTransaction
+                    transaction: SwiftDataWritable.WritableTransaction<[Person]>(
+                        body: { context, value, mutation in
+                            try (performPeopleTransaction)(context, value, mutation)
+                        }
+                    )
                 )
             }
         }
@@ -282,7 +286,7 @@ struct WritableMacroTests {
     assertMacroExpansion(
       """
       struct PeopleView {
-          @Writable(autosave: true, throws: true, mutableBy: \\Person.priority, transaction: .peopleTransaction)
+          @Writable(autosave: true, throws: true, mutableBy: \\Person.priority, transaction: performPeopleTransaction)
           @Query(sort: \\Person.priority)
           fileprivate var persons: [Person]
       }
@@ -299,7 +303,11 @@ struct WritableMacroTests {
                     value: persons,
                     context: __macro_local_23_personsWritableContextfMu_.context,
                     autosave: true,
-                    transaction: .peopleTransaction,
+                    transaction: SwiftDataWritable.WritableTransaction<[Person]>(
+                        body: { context, value, mutation in
+                            try (performPeopleTransaction)(context, value, mutation)
+                        }
+                    ),
                     mutableBy: \\Person.priority
                 )
             }
@@ -367,7 +375,7 @@ struct WritableMacroTests {
     assertMacroExpansion(
       """
       struct PersonView {
-          @Writable(autosave: true, throws: true, transaction: .personTransaction)
+          @Writable(autosave: true, throws: true, transaction: performPersonTransaction)
           private var person: Person
       }
       """,
@@ -382,7 +390,11 @@ struct WritableMacroTests {
                     value: person,
                     context: __macro_local_22_personWritableContextfMu_.context,
                     autosave: true,
-                    transaction: .personTransaction
+                    transaction: SwiftDataWritable.WritableTransaction<Person>(
+                        body: { context, value, mutation in
+                            try (performPersonTransaction)(context, value, mutation)
+                        }
+                    )
                 )
             }
         }
@@ -457,7 +469,7 @@ struct WritableMacroTests {
     assertMacroExpansion(
       """
       struct PersonView {
-          @Writable(autosave: true, transaction: .personTransaction)
+          @Writable(autosave: true, transaction: performPersonTransaction)
           var person: Person?
       }
       """,
@@ -476,7 +488,11 @@ struct WritableMacroTests {
                     value: model,
                     context: __macro_local_22_personWritableContextfMu_.context,
                     autosave: true,
-                    transaction: .personTransaction
+                    transaction: SwiftDataWritable.WritableTransaction<Person>(
+                        body: { context, value, mutation in
+                            try (performPersonTransaction)(context, value, mutation)
+                        }
+                    )
                 )
             }
         }

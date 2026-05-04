@@ -11,12 +11,12 @@ boundary; the property shape is.
 | `@Writable @Query var items: [Model]` | `$items: WritableModelCollection<[Model]>` | `@Query` remains the read-side snapshot. `$items` mutates through `ModelContext`. |
 | `@Writable(autosave: true) @Query var items: [Model]` | `$items: WritableModelCollection<[Model]>` | Same query actions, then best-effort autosave. |
 | `@Writable(autosave: true, throws: true) @Query var items: [Model]` | `$items: ThrowsWritableModelCollection<[Model]>` | Same query actions, then throwing autosave. |
-| `@Writable(autosave: true, throws: true, transaction: WritableTransaction<Person>.domainSave) @Query var persons: [Person]` | `$persons: ThrowsWritableModelCollection<[Person]>` | Same query actions wrapped by a typed domain autosave transaction. |
+| `@Writable(autosave: true, throws: true, transaction: PeopleDomain.save) @Query var persons: [Person]` | `$persons: ThrowsWritableModelCollection<[Person]>` | Same query actions wrapped by a domain autosave transaction function. |
 | `@Writable(mutableBy: \Model.order) @Query var items: [Model]` | `$items: KeyPathWritableModelCollection<[Model]>` | Query mutation plus persisted reorder support by rewriting existing ordering-key values. |
 | `@Writable(autosave: true, throws: true, mutableBy: \Model.order) @Query var items: [Model]` | `$items: KeyPathThrowsWritableModelCollection<[Model]>` | Reorder/query actions followed by throwing autosave. |
 | `@Writable var model: Model` | `$model: WritableModel<Model>` | Single attached model write surface and relationship-chain entry point. |
 | `@Writable(autosave: true, throws: true) var model: Model` | `$model: ThrowsWritableModel<Model>` | Single model writes followed by throwing autosave. |
-| `@Writable(autosave: true, transaction: WritableTransaction<Person>.domainSave) var person: Person` | `$person: WritableModel<Person>` | Single model writes wrapped by a typed domain autosave transaction. |
+| `@Writable(autosave: true, transaction: PeopleDomain.save) var person: Person` | `$person: WritableModel<Person>` | Single model writes wrapped by a domain autosave transaction function. |
 | `@Writable var model: Model?` | `$model: WritableModel<Model>?` | Optional single model write surface. Use optional chaining. |
 | `@Writable @Bindable var model: Model` | No generated `$model` peer | `@Bindable` keeps `$model`. Bridge with `try $model.writable(...)` or `try $model.throwsWritable(...)`. |
 | `@Writable var root: Root`, then `$root.children` | `WritableRelationshipCollection<Root, [Child]>` | Root model relationship membership mutation. |
@@ -157,13 +157,16 @@ private var person: Person
 `@Writable` does not generate a second `$person`. SwiftUI keeps `$person` as
 `Bindable<Person>`.
 
+For bridge calls, `transaction` means an explicit
+`WritableTransaction<Person>(body:)` value created in ordinary Swift code.
+
 | Expression | Meaning |
 | --- | --- |
 | `$person.name` | SwiftUI `@Bindable` field binding. |
 | `try $person.writable` | Bridge to `WritableModel<Person>` with `autosave: false`. |
 | `try $person.writable(autosave: true)` | Bridge to best-effort autosave `WritableModel<Person>`. |
 | `try $person.throwsWritable(autosave: true)` | Bridge to throwing autosave `ThrowsWritableModel<Person>`. |
-| `try $person.throwsWritable(autosave: true, transaction: WritableTransaction<Person>.domainSave)` | Bridge to throwing autosave wrapped by a typed transaction. |
+| `try $person.throwsWritable(autosave: true, transaction: transaction)` | Bridge to throwing autosave wrapped by an explicit runtime transaction. |
 
 The bridge reads `person.modelContext`. If the model is detached from a
 `ModelContext`, it throws `WritableModelError.detachedModel`.
@@ -233,19 +236,46 @@ autosave.
 `autosave: true` means mutations attempt `context.save()` after a successful
 mutation.
 
-If a typed `WritableTransaction<Model>` is supplied, `autosave: true` invokes
-that transaction around the mutation instead of calling `context.save()` again.
-This lets downstream packages register side effects or custom save/writeback
-boundaries once, while projection methods stay thin:
+If a transaction function is supplied, `autosave: true` invokes that function
+around the mutation instead of calling `context.save()` again. This lets
+downstream packages register side effects or custom save/writeback boundaries
+once, while projection methods stay thin:
 
 ```swift
 @Writable(
   autosave: true,
   throws: true,
-  transaction: WritableTransaction<Document>.writeback
+  transaction: Book.writeback
 )
 private var document: Document
 ```
+
+The macro infers the value signature from the property annotation and builds
+the runtime wrapper internally:
+
+```swift
+static func writeback(
+  _ context: ModelContext,
+  _ document: Document,
+  _ mutation: () throws -> Void
+) throws
+
+static func writeback(
+  _ context: ModelContext,
+  _ documents: [Document],
+  _ mutation: () throws -> Void
+) throws
+```
+
+Pass a non-overloaded function directly. If a domain wants one short public
+name for multiple shapes, expose a function-like value with `callAsFunction`
+overloads. Attribute arguments are type-checked before macro expansion, so a
+bare overloaded function name is ambiguous before the macro can apply the
+property type.
+
+Manual runtime bridges, such as `@Bindable`'s `$model.throwsWritable(...)`, do
+not go through macro expansion. Pass `WritableTransaction<Value>(body:)` there
+when a custom transaction is needed.
 
 `throws: false` means automatic save failures are swallowed. `throws: true`
 means automatic save failures are thrown through `ThrowsWritable*` surfaces.
