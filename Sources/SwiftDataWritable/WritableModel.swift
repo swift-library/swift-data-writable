@@ -5,7 +5,6 @@ import SwiftData
 /// `WritableModel` is produced by `@Writable` as a `$property` companion for a
 /// single model property. It does not define domain-specific actions such as
 /// rename or move; downstream packages can extend it for those commands.
-@MainActor
 @dynamicMemberLookup
 public struct WritableModel<Model: PersistentModel> {
   /// The projected model type.

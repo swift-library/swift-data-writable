@@ -6,7 +6,6 @@ import SwiftData
 /// `ThrowsWritableRelationshipCollection` mirrors
 /// `WritableRelationshipCollection`, but autosave failures are thrown to the
 /// caller.
-@MainActor
 public struct ThrowsWritableRelationshipCollection<Root, Base>
 where Root: PersistentModel,
       Base: RandomAccessCollection,

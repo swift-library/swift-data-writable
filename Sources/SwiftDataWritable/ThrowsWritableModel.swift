@@ -4,7 +4,6 @@ import SwiftData
 ///
 /// `ThrowsWritableModel` mirrors `WritableModel`, but autosave failures are
 /// thrown to the caller.
-@MainActor
 @dynamicMemberLookup
 public struct ThrowsWritableModel<Model: PersistentModel> {
   /// The projected model type.

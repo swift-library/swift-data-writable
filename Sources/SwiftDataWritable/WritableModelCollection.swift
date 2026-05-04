@@ -6,7 +6,6 @@ import SwiftData
 /// `$property` companion for an existing `@Query` array. It mutates the current
 /// `ModelContext`; when `autosave` is enabled, automatic save failures are
 /// swallowed. Call `save()` when the caller needs explicit error handling.
-@MainActor
 public struct WritableModelCollection<Base: Sequence>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.

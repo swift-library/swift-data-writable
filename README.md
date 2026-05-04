@@ -32,6 +32,11 @@ struct PeopleView: View {
 macro that adds a `$property` companion backed by SwiftUI's current
 `modelContext`.
 
+The generated runtime projections are bound to the `ModelContext` they receive,
+not to the main actor. Use them from the same actor or executor that owns that
+context. SwiftUI context lookup and the `@Bindable` bridge stay `@MainActor`
+because those are SwiftUI entry points.
+
 ## Surface Matrix
 
 | Source | Generated surface | Meaning |
@@ -104,6 +109,8 @@ multiple value shapes, expose a function-like value with `callAsFunction`
 overloads, such as `Book.writeback`; Swift type-checks macro arguments before
 macro expansion, so a bare overloaded function name has no property-type
 context yet.
+The transaction function runs in the same isolation context as the writable
+mutation and should operate on the supplied `ModelContext` and value.
 
 Ordinary `Writable*` built-in mutation methods are non-throwing. If `autosave`
 is true and SwiftData save or a transaction fails after mutation, the automatic

@@ -6,9 +6,8 @@ import SwiftData
 /// enabled. The transaction receives the active context, the projected value
 /// affected by the operation, and a mutation closure. Domain packages can use
 /// this hook to wrap writable mutations in their own save/writeback policy.
-@MainActor
 public struct WritableTransaction<Value> {
-  private let perform: @MainActor (
+  private let perform: (
     _ context: ModelContext,
     _ value: Value,
     _ mutation: () throws -> Void
@@ -16,7 +15,7 @@ public struct WritableTransaction<Value> {
 
   /// Creates a writable transaction hook.
   public init(
-    body perform: @escaping @MainActor (
+    body perform: @escaping (
       _ context: ModelContext,
       _ value: Value,
       _ mutation: () throws -> Void
@@ -45,7 +44,6 @@ public struct WritableTransaction<Value> {
   }
 }
 
-@MainActor
 func _performWritableMutation<Value, Result>(
   context: ModelContext,
   autosave: Bool,
@@ -79,7 +77,6 @@ func _performWritableMutation<Value, Result>(
   return output.requiredValue
 }
 
-@MainActor
 func _performThrowsWritableMutation<Value, Result>(
   context: ModelContext,
   autosave: Bool,
