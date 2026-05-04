@@ -4,7 +4,6 @@ import SwiftData
 ///
 /// `ThrowsWritableModelCollection` mirrors `WritableModelCollection`, but
 /// autosave failures are thrown to the caller.
-@MainActor
 public struct ThrowsWritableModelCollection<Base: Sequence>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.

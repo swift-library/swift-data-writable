@@ -27,6 +27,11 @@ The `Model` and relationship element types must conform to `PersistentModel`.
 The macro validates syntax first; generated generic constraints let the compiler
 enforce SwiftData model conformance.
 
+Writable projections are `ModelContext`-bound instead of globally
+`@MainActor`-bound. Call them from the same actor or executor as the context and
+models they wrap. SwiftUI-specific context lookup and `@Bindable` bridging are
+the main-actor entry points.
+
 ## Unsupported Combinations
 
 | Source property | Why it is rejected |
@@ -276,6 +281,9 @@ property type.
 Manual runtime bridges, such as `@Bindable`'s `$model.throwsWritable(...)`, do
 not go through macro expansion. Pass `WritableTransaction<Value>(body:)` there
 when a custom transaction is needed.
+
+Transaction functions run in the same isolation context as the writable
+mutation and should operate on the supplied value and `ModelContext`.
 
 `throws: false` means automatic save failures are swallowed. `throws: true`
 means automatic save failures are thrown through `ThrowsWritable*` surfaces.

@@ -7,7 +7,6 @@ import SwiftUI
 /// `KeyPathThrowsWritableModelCollection` mirrors
 /// `KeyPathWritableModelCollection`, but autosave failures are thrown to the
 /// caller.
-@MainActor
 public struct KeyPathThrowsWritableModelCollection<Base: RandomAccessCollection>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.

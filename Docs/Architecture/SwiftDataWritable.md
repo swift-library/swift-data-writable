@@ -81,6 +81,13 @@ runtime `DynamicProperty` that reads SwiftUI's `@Environment(\.modelContext)`.
 The `$persons` projection passes the reader's `context` into the runtime
 surface.
 
+The runtime projection types are `ModelContext`-bound, not `@MainActor`-bound.
+Call writable projections on the same actor or executor that owns the
+underlying SwiftData `ModelContext` and model instances. The SwiftUI
+`DynamicProperty` context reader and `@Bindable` bridge remain `@MainActor`
+because they are SwiftUI integration points, but the core projections and
+transaction hook do not force all model writes onto the main actor.
+
 ## Key Principles
 
 - Keep `@Query` untouched and observable.
@@ -119,6 +126,8 @@ When the macro receives `transaction: SomeDomain.save`, autosave uses that
 function instead of the default `context.save()` path. The transaction function
 owns the around-mutation boundary and SwiftDataWritable does not perform an
 additional save afterward.
+The transaction runs in the caller's current isolation context; it should use
+only the `ModelContext` and model graph passed into the projection.
 
 Examples:
 

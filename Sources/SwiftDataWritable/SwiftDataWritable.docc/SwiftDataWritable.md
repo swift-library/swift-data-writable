@@ -42,6 +42,11 @@ relationship. With `autosave: false`, they do not call `context.save()`. With
 `autosave: true`, they attempt a best-effort save and swallow automatic save
 failures. Explicit `save()` always throws on failure.
 
+Writable runtime projections are isolated by the `ModelContext` and model graph
+they are given, not by the main actor. Use them on the same actor or executor
+that owns that context. SwiftUI context lookup and the `@Bindable` bridge remain
+main-actor SwiftUI integration points.
+
 ```swift
 $persons.append(Person(name: "Draft"))
 try $persons.save()
@@ -76,6 +81,7 @@ where `Value` is the single model or the query collection array.
 Use a non-overloaded function directly; use a function-like value with
 `callAsFunction` overloads when one short public name should handle multiple
 value shapes.
+The transaction runs in the same isolation context as the writable mutation.
 
 Single model properties generate `WritableModel`:
 

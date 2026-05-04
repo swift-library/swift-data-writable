@@ -6,7 +6,6 @@ import SwiftData
 /// `WritableRelationshipCollection` is produced by dynamic member lookup from
 /// `WritableModel`. It mutates the owner's relationship collection directly; it
 /// does not represent a SwiftData `@Query` snapshot.
-@MainActor
 public struct WritableRelationshipCollection<Root, Base>
 where Root: PersistentModel,
       Base: RandomAccessCollection,

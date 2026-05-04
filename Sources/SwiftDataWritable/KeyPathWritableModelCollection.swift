@@ -8,7 +8,6 @@ import SwiftUI
 /// exposes the same mutation actions as `WritableModelCollection` plus `move`,
 /// which rewrites a comparable reference-writable key path using the current
 /// query snapshot's existing ordering values.
-@MainActor
 public struct KeyPathWritableModelCollection<Base: RandomAccessCollection>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.
