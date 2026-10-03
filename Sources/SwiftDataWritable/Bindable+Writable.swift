@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 import SwiftUI
 
@@ -8,16 +11,16 @@ public enum WritableModelError: Error, Equatable, Sendable {
 }
 
 @MainActor
-public extension Bindable where Value: PersistentModel {
+extension Bindable where Value: PersistentModel {
   /// A writable projection for the bound model.
-  var writable: WritableModel<Value> {
+  public var writable: WritableModel<Value> {
     get throws {
       try writable()
     }
   }
 
   /// A writable projection for the bound model.
-  func writable(
+  public func writable(
     autosave: Bool = false,
     transaction: WritableTransaction<Value>? = nil
   ) throws -> WritableModel<Value> {
@@ -30,14 +33,14 @@ public extension Bindable where Value: PersistentModel {
   }
 
   /// An error-transparent writable projection for the bound model.
-  var throwsWritable: ThrowsWritableModel<Value> {
+  public var throwsWritable: ThrowsWritableModel<Value> {
     get throws {
       try throwsWritable()
     }
   }
 
   /// An error-transparent writable projection for the bound model.
-  func throwsWritable(
+  public func throwsWritable(
     autosave: Bool = false,
     transaction: WritableTransaction<Value>? = nil
   ) throws -> ThrowsWritableModel<Value> {

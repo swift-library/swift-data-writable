@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import Foundation
 import SwiftData
 import SwiftUI
@@ -8,6 +11,8 @@ import SwiftUI
 /// exposes the same mutation actions as `WritableModelCollection` plus `move`,
 /// which rewrites a comparable reference-writable key path using the current
 /// query snapshot's existing ordering values.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 public struct KeyPathWritableModelCollection<Base: RandomAccessCollection>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.
@@ -30,6 +35,7 @@ where Base.Element: PersistentModel {
   ///   - value: The current query snapshot.
   ///   - context: The current SwiftData `ModelContext`.
   ///   - autosave: Whether mutation operations should attempt a best-effort save.
+  ///   - transaction: Optional autosave hook for the affected collection values.
   ///   - keyPath: A reference-writable key path whose current values define
   ///     the persisted order.
   public init<Value: Comparable>(

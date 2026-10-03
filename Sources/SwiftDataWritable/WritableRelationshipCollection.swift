@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import Foundation
 import SwiftData
 
@@ -6,11 +9,15 @@ import SwiftData
 /// `WritableRelationshipCollection` is produced by dynamic member lookup from
 /// `WritableModel`. It mutates the owner's relationship collection directly; it
 /// does not represent a SwiftData `@Query` snapshot.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 public struct WritableRelationshipCollection<Root, Base>
-where Root: PersistentModel,
-      Base: RandomAccessCollection,
-      Base: RangeReplaceableCollection,
-      Base.Element: PersistentModel {
+where
+  Root: PersistentModel,
+  Base: RandomAccessCollection,
+  Base: RangeReplaceableCollection,
+  Base.Element: PersistentModel
+{
   /// The model type contained in the relationship collection.
   public typealias Element = Base.Element
 

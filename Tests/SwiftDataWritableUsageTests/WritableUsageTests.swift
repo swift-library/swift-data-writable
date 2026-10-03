@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import Foundation
 import SwiftData
 import SwiftDataWritable
@@ -6,6 +9,8 @@ import Testing
 
 #if canImport(AppKit)
   import AppKit
+#elseif canImport(UIKit)
+  import UIKit
 #endif
 
 @Model
@@ -578,25 +583,37 @@ struct WritableUsageTests {
     _ = BindableTransactionWritableBookRelationshipView(book: book, tag: tag)
   }
 
-  @MainActor
-  @Test func writableProjectionUsesHostedModelContext() throws {
-    #if canImport(AppKit)
+  #if canImport(AppKit) || canImport(UIKit)
+    @MainActor
+    @Test func writableProjectionUsesHostedModelContext() throws {
       let container = try makeContainer()
       let probe = WritableContextProbe()
       let view = WritableContextProbeView(probe: probe)
         .modelContainer(container)
-      let hostingView = NSHostingView(rootView: view)
-      let window = NSWindow(
-        contentRect: NSRect(x: 0, y: 0, width: 10, height: 10),
-        styleMask: .borderless,
-        backing: .buffered,
-        defer: false
-      )
-      window.contentView = hostingView
-      window.orderFrontRegardless()
-      defer {
-        window.close()
-      }
+      #if canImport(AppKit)
+        let hostingView = NSHostingView(rootView: view)
+        let window = NSWindow(
+          contentRect: NSRect(x: 0, y: 0, width: 10, height: 10),
+          styleMask: .borderless,
+          backing: .buffered,
+          defer: false
+        )
+        // Swift owns this window; close must not release it a second time.
+        window.isReleasedWhenClosed = false
+        window.contentView = hostingView
+        window.orderFrontRegardless()
+        defer {
+          window.close()
+        }
+      #elseif canImport(UIKit)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        window.rootViewController = UIHostingController(rootView: view)
+        window.makeKeyAndVisible()
+        defer {
+          window.isHidden = true
+          window.rootViewController = nil
+        }
+      #endif
 
       var names = [String]()
       let deadline = Date().addingTimeInterval(2)
@@ -607,8 +624,9 @@ struct WritableUsageTests {
 
       #expect(probe.didAppear)
       #expect(names.contains("Hosted Person"))
-    #endif
-  }
+    }
+
+  #endif
 
   @MainActor
   private func makeContainer() throws -> ModelContainer {

@@ -1,9 +1,34 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 import SwiftDataWritable
 import Testing
 
 @Suite
 struct WritableModelTests {
+  @MainActor
+  @Test func transactionRejectionPreventsMutationAndPropagatesFromWrite() throws {
+    let context = try makeContext()
+    let person = Person(name: "Original")
+    context.insert(person)
+    let transaction = WritableTransaction<Person> { _, _, _ in
+      throw TransactionTestError.failed
+    }
+    let writable = WritableModel(
+      value: person,
+      context: context,
+      autosave: true,
+      transaction: transaction
+    )
+    #expect(throws: TransactionTestError.failed) {
+      try writable.write { person, _ in
+        person.name = "Changed"
+      }
+    }
+    #expect(person.name == "Original")
+  }
+
   @MainActor
   @Test func writeProvidesModelAndContextWithoutSaving() throws {
     let context = try makeContext()

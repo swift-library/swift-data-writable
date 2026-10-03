@@ -3,28 +3,49 @@
 SwiftDataWritable adds projected write companions for SwiftData `@Query`
 collections and single SwiftData models in SwiftUI.
 
+## Requirements and Installation
+
+Requires Swift 6.2 or later, with iOS 18+, macOS 15+, tvOS 18+ or watchOS 11+.
+Compiler requirements are maintained independently of the system maintenance
+window. The macro implementation uses SwiftSyntax 602; the package lock records
+the revision used for validation.
+
+Add the package and product to your SwiftPM manifest. During 0.x, use a next-minor
+range so breaking minor updates remain an explicit upgrade:
+
+```swift
+.package(
+  url: "https://github.com/swift-library/swift-data-writable.git",
+  .upToNextMinor(from: "0.1.0")
+)
+
+.product(name: "SwiftDataWritable", package: "swift-data-writable")
+```
+
+## Quick Start
+
 ```swift
 import SwiftData
 import SwiftDataWritable
 import SwiftUI
 
 struct PeopleView: View {
-    @Writable
-    @Query(sort: \Person.name)
-    private var persons: [Person]
+  @Writable
+  @Query(sort: \Person.name)
+  private var persons: [Person]
 
-    var body: some View {
-        List {
-            ForEach(persons) { person in
-                Text(person.name)
-            }
-            .onDelete(perform: $persons.remove)
-        }
-
-        Button("Add") {
-            $persons.append(Person(name: "New"))
-        }
+  var body: some View {
+    List {
+      ForEach(persons) { person in
+        Text(person.name)
+      }
+      .onDelete(perform: $persons.remove)
     }
+
+    Button("Add") {
+      $persons.append(Person(name: "New"))
+    }
+  }
 }
 ```
 
@@ -80,9 +101,9 @@ closure, and does not also call `context.save()`:
 
 ```swift
 @Writable(
-    autosave: true,
-    throws: true,
-    transaction: Book.writeback
+  autosave: true,
+  throws: true,
+  transaction: Book.writeback
 )
 var document: Document
 ```
@@ -92,15 +113,15 @@ property receives the model; a query collection receives the current array:
 
 ```swift
 static func writeback(
-    _ context: ModelContext,
-    _ document: Document,
-    _ mutation: () throws -> Void
+  _ context: ModelContext,
+  _ document: Document,
+  _ mutation: () throws -> Void
 ) throws
 
 static func writeback(
-    _ context: ModelContext,
-    _ documents: [Document],
-    _ mutation: () throws -> Void
+  _ context: ModelContext,
+  _ documents: [Document],
+  _ mutation: () throws -> Void
 ) throws
 ```
 
@@ -111,6 +132,9 @@ macro expansion, so a bare overloaded function name has no property-type
 context yet.
 The transaction function runs in the same isolation context as the writable
 mutation and should operate on the supplied `ModelContext` and value.
+On success it must invoke the mutation synchronously. Reject it by throwing
+before mutation; returning successfully without invoking it is a programmer
+error. Propagate mutation errors instead of swallowing them and returning.
 
 Ordinary `Writable*` built-in mutation methods are non-throwing. If `autosave`
 is true and SwiftData save or a transaction fails after mutation, the automatic
@@ -138,12 +162,12 @@ The generated shape is:
 ```swift
 private var _personsWritableContext = SwiftDataWritable._WritableModelContextReader()
 
-private var $persons: WritableModelCollection<[Person]> {
-    WritableModelCollection(
-        value: persons,
-        context: _personsWritableContext.context,
-        autosave: false
-    )
+private var `$persons`: WritableModelCollection<[Person]> {
+  WritableModelCollection(
+    value: persons,
+    context: _personsWritableContext.context,
+    autosave: false
+  )
 }
 ```
 
@@ -172,16 +196,16 @@ integer values.
 private var book: Book
 
 try $book.write { book, _ in
-    book.title = "Updated"
+  book.title = "Updated"
 }
 
 $book.tags.append(tag)
 $book.tags[0].documents.append(document)
 try $book.tags[0].documents[0].write { document, _ in
-    document.title = "Updated"
+  document.title = "Updated"
 }
 try $document.folder?.write { folder, _ in
-    folder.name = "Manual"
+  folder.name = "Manual"
 }
 ```
 
@@ -208,7 +232,7 @@ continue through `PersistentModel` relationships without competing with
 
 ```swift
 try $document.folder?.write { folder, _ in
-    folder.name = "Manual"
+  folder.name = "Manual"
 }
 ```
 
@@ -224,10 +248,10 @@ private var person: Person
 
 $person.name
 try $person.writable(autosave: true).write { person, _ in
-    person.name = "Updated"
+  person.name = "Updated"
 }
 try $person.throwsWritable(autosave: true).write { person, _ in
-    person.name = "Updated"
+  person.name = "Updated"
 }
 ```
 
@@ -238,10 +262,10 @@ The `@Bindable` bridge is a runtime API, so it accepts an explicit
 let transaction = WritableTransaction<Person>(body: PeopleDomain.save)
 
 try $person.throwsWritable(
-    autosave: true,
-    transaction: transaction
+  autosave: true,
+  transaction: transaction
 ).write { person, _ in
-    person.name = "Updated"
+  person.name = "Updated"
 }
 ```
 
@@ -266,33 +290,33 @@ maintaining ordering, validating ownership, or running side effects.
 
 ```swift
 extension WritableModel where Model == Book {
-    @discardableResult
-    func attachTagIfMissing(named name: String) throws -> Tag {
-        try write { book, _ in
-            if let existing = book.tags.first(where: { $0.name == name }) {
-                return existing
-            }
+  @discardableResult
+  func attachTagIfMissing(named name: String) throws -> Tag {
+    try write { book, _ in
+      if let existing = book.tags.first(where: { $0.name == name }) {
+        return existing
+      }
 
-            let tag = Tag(name: name)
-            book.tags.append(tag)
-            return tag
-        }
+      let tag = Tag(name: name)
+      book.tags.append(tag)
+      return tag
     }
+  }
 }
 
 extension ThrowsWritableModel where Model == Book {
-    @discardableResult
-    func attachTagIfMissing(named name: String) throws -> Tag {
-        try write { book, _ in
-            if let existing = book.tags.first(where: { $0.name == name }) {
-                return existing
-            }
+  @discardableResult
+  func attachTagIfMissing(named name: String) throws -> Tag {
+    try write { book, _ in
+      if let existing = book.tags.first(where: { $0.name == name }) {
+        return existing
+      }
 
-            let tag = Tag(name: name)
-            book.tags.append(tag)
-            return tag
-        }
+      let tag = Tag(name: name)
+      book.tags.append(tag)
+      return tag
     }
+  }
 }
 ```
 
@@ -319,3 +343,17 @@ owned by SwiftData.
 - [Architecture](Docs/Architecture/README.md)
 - [Writable Combinations](Docs/Reference/WritableCombinations.md)
 - [DocC entry point](Sources/SwiftDataWritable/SwiftDataWritable.docc/SwiftDataWritable.md)
+- [Release Guide](Docs/Reference/ReleaseGuide.md)
+
+## Maintenance and License
+
+The default branch is `master`. This library follows [the package version and
+release policy](Docs/Architecture/VersioningAndRelease.md). The latest released
+line receives maintenance; older-line backports are evaluated per issue. Dependency
+and Actions updates are checked weekly through reviewed PRs.
+
+See [CONTRIBUTING](CONTRIBUTING.md) for development checks and [SECURITY](SECURITY.md)
+for private vulnerability reporting.
+
+Licensed under [Apache-2.0 WITH Swift-exception](LICENSE). [NOTICE](NOTICE)
+records copyright and dependency attribution.
