@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 
 
@@ -31,19 +32,25 @@ def main():
     if len(matches) != 1:
         raise RuntimeError("Symbol extraction did not identify its output directory")
     graphs = Path(matches[0])
-    symbols = Path(tempfile.mkdtemp(prefix="documentation-symbols-", dir=output))
+    workspace = root / ".build/documentation"
+    workspace.mkdir(parents=True, exist_ok=True)
+    symbols = Path(tempfile.mkdtemp(prefix="symbols-", dir=workspace))
     selected = [graphs / "SwiftDataWritable.symbols.json", *graphs.glob("SwiftDataWritable@*.symbols.json")]
     for path in selected:
         shutil.copy2(path, symbols / path.name)
     command = [
         "xcrun", "docc", "convert", str(root / "Sources/SwiftDataWritable/SwiftDataWritable.docc"),
         "--additional-symbol-graph-dir", str(symbols),
-        "--output-path", str(output / "SwiftDataWritable.doccarchive"), "--warnings-as-errors",
+        "--output-path", str(workspace / "SwiftDataWritable.doccarchive"), "--warnings-as-errors",
     ]
     with (output / "docc.log").open("w") as log:
         subprocess.run(command, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+    archive = output / "SwiftDataWritable.doccarchive.tar.gz"
+    with tarfile.open(archive, "w:gz") as bundle:
+        bundle.add(workspace / "SwiftDataWritable.doccarchive", arcname="SwiftDataWritable.doccarchive")
     evidence = {"checker_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 "symbol_graphs": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in symbols.iterdir()},
+                "archive": archive.name, "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
                 "checks": ["public-symbol-extraction", "docc-warnings-as-errors"]}
     (output / "documentation.json").write_text(json.dumps(evidence, indent=2) + "\n")
     print("DocC compilation passed")

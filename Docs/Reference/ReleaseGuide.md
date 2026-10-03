@@ -16,6 +16,9 @@ Run `Scripts/check` on the clean candidate with macOS 27's toolchain. Check the
 read-only CI results for macOS 15 with Swift 6.2 and macOS 26 with Swift 6.3. Its
 strict-format job uses the declared formatter toolchain. Preserve `.build/release-validation`
 receipts and logs as acceptance evidence.
+The DocC archive is preserved as a tarball with its checksum. Consumer evidence
+includes the generated manifest, dependency lock, logs and receipt; build
+directories stay outside the CI artifact.
 
 The local consumer check uses a fresh dependency graph. Before publication, push
 the candidate and separately verify its remote revision:
