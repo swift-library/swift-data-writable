@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
@@ -50,38 +53,40 @@ public struct WritableMacro: PeerMacro {
       return []
     case .singleModel(let modelType, false):
       let projectionType = throwsSaveErrors ? "ThrowsWritableModel" : "WritableModel"
-      let transactionArgument = node.transactionExpression.map { expression in
-        Self.transactionArgument(expression: expression, valueType: modelType)
-      } ?? ""
+      let transactionArgument =
+        node.transactionExpression.map { expression in
+          Self.transactionArgument(expression: expression, valueType: modelType)
+        } ?? ""
       let projection: DeclSyntax =
         """
         \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: modelType)> {
-            SwiftDataWritable.\(raw: projectionType)(
-                value: \(raw: property.name),
-                context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
-            )
+          SwiftDataWritable.\(raw: projectionType)(
+            value: \(raw: property.name),
+            context: \(raw: contextName).context,
+            autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
+          )
         }
         """
 
       return [contextDeclaration, projection]
     case .singleModel(let modelType, true):
       let projectionType = throwsSaveErrors ? "ThrowsWritableModel" : "WritableModel"
-      let transactionArgument = node.transactionExpression.map { expression in
-        Self.transactionArgument(expression: expression, valueType: modelType)
-      } ?? ""
+      let transactionArgument =
+        node.transactionExpression.map { expression in
+          Self.transactionArgument(expression: expression, valueType: modelType)
+        } ?? ""
       let projection: DeclSyntax =
         """
         \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: modelType)>? {
-            guard let model = \(raw: property.name) else {
-                return nil
-            }
+          guard let model = \(raw: property.name) else {
+            return nil
+          }
 
-            return SwiftDataWritable.\(raw: projectionType)(
-                value: model,
-                context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
-            )
+          return SwiftDataWritable.\(raw: projectionType)(
+            value: model,
+            context: \(raw: contextName).context,
+            autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
+          )
         }
         """
 
@@ -93,38 +98,41 @@ public struct WritableMacro: PeerMacro {
       }
 
       let collectionType = "[\(elementType)]"
-      let transactionArgument = node.transactionExpression.map { expression in
-        Self.transactionArgument(expression: expression, valueType: collectionType)
-      } ?? ""
+      let transactionArgument =
+        node.transactionExpression.map { expression in
+          Self.transactionArgument(expression: expression, valueType: collectionType)
+        } ?? ""
 
       guard let mutableByExpression = node.mutableByExpression else {
-        let projectionType = throwsSaveErrors ? "ThrowsWritableModelCollection" : "WritableModelCollection"
+        let projectionType =
+          throwsSaveErrors ? "ThrowsWritableModelCollection" : "WritableModelCollection"
         let projection: DeclSyntax =
           """
           \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: collectionType)> {
-              SwiftDataWritable.\(raw: projectionType)(
-                  value: \(raw: property.name),
-                  context: \(raw: contextName).context,
-                  autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
-              )
+            SwiftDataWritable.\(raw: projectionType)(
+              value: \(raw: property.name),
+              context: \(raw: contextName).context,
+              autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument)
+            )
           }
           """
 
         return [contextDeclaration, projection]
       }
 
-      let projectionType = throwsSaveErrors
+      let projectionType =
+        throwsSaveErrors
         ? "KeyPathThrowsWritableModelCollection"
         : "KeyPathWritableModelCollection"
       let projection: DeclSyntax =
         """
         \(raw: access)var `\(raw: projectionName)`: SwiftDataWritable.\(raw: projectionType)<\(raw: collectionType)> {
-            SwiftDataWritable.\(raw: projectionType)(
-                value: \(raw: property.name),
-                context: \(raw: contextName).context,
-                autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument),
-                mutableBy: \(mutableByExpression)
-            )
+          SwiftDataWritable.\(raw: projectionType)(
+            value: \(raw: property.name),
+            context: \(raw: contextName).context,
+            autosave: \(raw: autosave ? "true" : "false")\(raw: transactionArgument),
+            mutableBy: \(mutableByExpression)
+          )
         }
         """
 
@@ -138,11 +146,11 @@ public struct WritableMacro: PeerMacro {
   ) -> String {
     """
     ,
-            transaction: SwiftDataWritable.WritableTransaction<\(valueType)>(
-                body: { context, value, mutation in
-                    try (\(expression))(context, value, mutation)
-                }
-            )
+        transaction: SwiftDataWritable.WritableTransaction<\(valueType)>(
+          body: { context, value, mutation in
+            try (\(expression))(context, value, mutation)
+          }
+        )
     """
   }
 }

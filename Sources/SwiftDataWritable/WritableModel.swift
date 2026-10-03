@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 
 /// Write actions for a single SwiftData model.
@@ -5,6 +8,8 @@ import SwiftData
 /// `WritableModel` is produced by `@Writable` as a `$property` companion for a
 /// single model property. It does not define domain-specific actions such as
 /// rename or move; downstream packages can extend it for those commands.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 @dynamicMemberLookup
 public struct WritableModel<Model: PersistentModel> {
   /// The projected model type.
@@ -68,9 +73,11 @@ public struct WritableModel<Model: PersistentModel> {
   public subscript<Base>(
     dynamicMember keyPath: ReferenceWritableKeyPath<Model, Base>
   ) -> WritableRelationshipCollection<Model, Base>
-  where Base: RandomAccessCollection,
-        Base: RangeReplaceableCollection,
-        Base.Element: PersistentModel {
+  where
+    Base: RandomAccessCollection,
+    Base: RangeReplaceableCollection,
+    Base.Element: PersistentModel
+  {
     WritableRelationshipCollection(
       root: value,
       keyPath: keyPath,

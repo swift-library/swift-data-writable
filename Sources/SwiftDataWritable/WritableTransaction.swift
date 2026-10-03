@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 
 /// A typed around-mutation hook used by writable projections during autosave.
@@ -6,20 +9,25 @@ import SwiftData
 /// enabled. The transaction receives the active context, the projected value
 /// affected by the operation, and a mutation closure. Domain packages can use
 /// this hook to wrap writable mutations in their own save/writeback policy.
+/// On success the hook must invoke its mutation synchronously. To reject a
+/// mutation, throw before invoking it; returning without it is a programmer
+/// error. Propagate mutation errors instead of returning successfully.
 public struct WritableTransaction<Value> {
-  private let perform: (
-    _ context: ModelContext,
-    _ value: Value,
-    _ mutation: () throws -> Void
-  ) throws -> Void
-
-  /// Creates a writable transaction hook.
-  public init(
-    body perform: @escaping (
+  private let perform:
+    (
       _ context: ModelContext,
       _ value: Value,
       _ mutation: () throws -> Void
     ) throws -> Void
+
+  /// Creates a writable transaction hook.
+  public init(
+    body perform:
+      @escaping (
+        _ context: ModelContext,
+        _ value: Value,
+        _ mutation: () throws -> Void
+      ) throws -> Void
   ) {
     self.perform = perform
   }

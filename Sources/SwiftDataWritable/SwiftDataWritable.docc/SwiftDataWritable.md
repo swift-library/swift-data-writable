@@ -17,23 +17,23 @@ import SwiftDataWritable
 import SwiftUI
 
 struct PeopleView: View {
-    @Writable
-    @Query(sort: \Person.name)
-    private var persons: [Person]
+  @Writable
+  @Query(sort: \Person.name)
+  private var persons: [Person]
 
-    var body: some View {
-        List {
-            ForEach(persons) { person in
-                Text(person.name)
-            }
-            .onDelete(perform: $persons.remove)
-        }
-        .toolbar {
-            Button("Add") {
-                $persons.append(Person(name: "New"))
-            }
-        }
+  var body: some View {
+    List {
+      ForEach(persons) { person in
+        Text(person.name)
+      }
+      .onDelete(perform: $persons.remove)
     }
+    .toolbar {
+      Button("Add") {
+        $persons.append(Person(name: "New"))
+      }
+    }
+  }
 }
 ```
 
@@ -67,9 +67,9 @@ effects or save/writeback timing:
 
 ```swift
 @Writable(
-    autosave: true,
-    throws: true,
-    transaction: Book.writeback
+  autosave: true,
+  throws: true,
+  transaction: Book.writeback
 )
 private var document: Document
 ```
@@ -82,6 +82,9 @@ Use a non-overloaded function directly; use a function-like value with
 `callAsFunction` overloads when one short public name should handle multiple
 value shapes.
 The transaction runs in the same isolation context as the writable mutation.
+Successful hooks invoke the mutation synchronously and propagate its errors.
+Throw before invoking it to reject the mutation. Returning successfully without
+invoking it violates the runtime precondition.
 
 Single model properties generate `WritableModel`:
 
@@ -90,7 +93,7 @@ Single model properties generate `WritableModel`:
 private var person: Person
 
 try $person.write { person, _ in
-    person.name = "Updated"
+  person.name = "Updated"
 }
 ```
 
@@ -107,7 +110,7 @@ private var book: Book
 $book.tags.append(tag)
 $book.tags[0].documents.append(document)
 try $book.tags[0].documents[0].write { document, _ in
-    document.title = "Updated"
+  document.title = "Updated"
 }
 ```
 
@@ -124,7 +127,7 @@ relationship:
 
 ```swift
 try $document.folder?.write { folder, _ in
-    folder.name = "Manual"
+  folder.name = "Manual"
 }
 ```
 

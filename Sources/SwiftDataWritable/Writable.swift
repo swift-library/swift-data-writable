@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 /// Adds a projected mutation or write companion to a SwiftData `@Query`
 /// collection or model.
 ///
@@ -36,11 +39,6 @@
 ///   mutation. Ordinary `Writable*` surfaces swallow autosave failures.
 /// - Parameter throws: When `true`, the macro generates the corresponding
 ///   `ThrowsWritable*` surface and autosave failures are thrown to the caller.
-/// - Parameter transaction: A function expression that wraps writable
-///   mutations when `autosave` is enabled. The macro gives the function a
-///   typed context using the source property's model or collection type. Use
-///   a function-like value with `callAsFunction` overloads when one public name
-///   must support multiple value shapes.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable(autosave: Bool = false, throws: Bool = false) =
   #externalMacro(
@@ -50,6 +48,13 @@ public macro Writable(autosave: Bool = false, throws: Bool = false) =
 
 /// Adds a projected mutation or write companion with an autosave transaction
 /// function hook.
+///
+/// - Parameters:
+///   - autosave: Whether mutations invoke the transaction hook.
+///   - throws: Whether automatic save errors propagate to the caller.
+///   - transaction: A function expression receiving the context, source value
+///     and mutation. Use a function-like value with `callAsFunction` overloads
+///     when one name supports several value shapes.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable(
   autosave: Bool = false,
@@ -74,8 +79,11 @@ public macro Writable(
 ///
 /// The generated projection is a `KeyPathWritableModelCollection`.
 ///
-/// - Parameter keyPath: A reference-writable key path whose existing values
-///   define the stored order for the current query snapshot.
+/// - Parameters:
+///   - autosave: Whether mutations attempt to save after success.
+///   - throws: Whether automatic save errors propagate to the caller.
+///   - keyPath: A reference-writable key path whose existing values define the
+///     stored order for the current query snapshot.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable<Root, Value: Comparable>(
   autosave: Bool = false,
@@ -88,6 +96,13 @@ public macro Writable<Root, Value: Comparable>(
   )
 
 /// Adds a projected reorder companion with an autosave transaction function hook.
+///
+/// - Parameters:
+///   - autosave: Whether mutations invoke the transaction hook.
+///   - throws: Whether automatic save errors propagate to the caller.
+///   - keyPath: The comparable ordering key path used to persist reordering.
+///   - transaction: A function expression receiving the context, source array
+///     and mutation closure.
 @attached(peer, names: prefixed(`$`), arbitrary)
 public macro Writable<Root, Value: Comparable>(
   autosave: Bool = false,

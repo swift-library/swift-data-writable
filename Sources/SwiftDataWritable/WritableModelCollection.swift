@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 
 /// Write actions for a SwiftData query collection.
@@ -6,6 +9,8 @@ import SwiftData
 /// `$property` companion for an existing `@Query` array. It mutates the current
 /// `ModelContext`; when `autosave` is enabled, automatic save failures are
 /// swallowed. Call `save()` when the caller needs explicit error handling.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 public struct WritableModelCollection<Base: Sequence>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.

@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+# Copyright (c) 2026 Xudong Xu
+
+"""Compile the public module's DocC catalog with warnings treated as errors."""
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    root = Path(__file__).resolve().parent.parent
+    output = root / ".build/release-validation"
+    output.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        ["swift", "package", "--force-resolved-versions", "dump-symbol-graph"],
+        cwd=root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
+    (output / "docc-symbolgraph.log").write_text(result.stdout)
+    if result.returncode:
+        raise RuntimeError("Symbol extraction failed; inspect " + str(output / "docc-symbolgraph.log"))
+    matches = re.findall(r"^Files written to (.+)$", result.stdout, re.MULTILINE)
+    if len(matches) != 1:
+        raise RuntimeError("Symbol extraction did not identify its output directory")
+    graphs = Path(matches[0])
+    symbols = Path(tempfile.mkdtemp(prefix="documentation-symbols-", dir=output))
+    selected = [graphs / "SwiftDataWritable.symbols.json", *graphs.glob("SwiftDataWritable@*.symbols.json")]
+    for path in selected:
+        shutil.copy2(path, symbols / path.name)
+    command = [
+        "xcrun", "docc", "convert", str(root / "Sources/SwiftDataWritable/SwiftDataWritable.docc"),
+        "--additional-symbol-graph-dir", str(symbols),
+        "--output-path", str(output / "SwiftDataWritable.doccarchive"), "--warnings-as-errors",
+    ]
+    with (output / "docc.log").open("w") as log:
+        subprocess.run(command, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+    evidence = {"checker_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                "symbol_graphs": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in symbols.iterdir()},
+                "checks": ["public-symbol-extraction", "docc-warnings-as-errors"]}
+    (output / "documentation.json").write_text(json.dumps(evidence, indent=2) + "\n")
+    print("DocC compilation passed")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+        print("check-docs: " + str(error), file=sys.stderr)
+        sys.exit(1)

@@ -128,6 +128,9 @@ owns the around-mutation boundary and SwiftDataWritable does not perform an
 additional save afterward.
 The transaction runs in the caller's current isolation context; it should use
 only the `ModelContext` and model graph passed into the projection.
+Successful transaction hooks must invoke the mutation synchronously and propagate
+mutation errors. To reject a mutation, throw before calling it. Returning
+successfully without calling it violates the runtime precondition.
 
 Examples:
 

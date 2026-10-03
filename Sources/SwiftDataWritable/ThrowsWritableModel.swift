@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 
 /// Error-transparent write actions for a single SwiftData model.
 ///
 /// `ThrowsWritableModel` mirrors `WritableModel`, but autosave failures are
 /// thrown to the caller.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 @dynamicMemberLookup
 public struct ThrowsWritableModel<Model: PersistentModel> {
   /// The projected model type.
@@ -67,9 +72,11 @@ public struct ThrowsWritableModel<Model: PersistentModel> {
   public subscript<Base>(
     dynamicMember keyPath: ReferenceWritableKeyPath<Model, Base>
   ) -> ThrowsWritableRelationshipCollection<Model, Base>
-  where Base: RandomAccessCollection,
-        Base: RangeReplaceableCollection,
-        Base.Element: PersistentModel {
+  where
+    Base: RandomAccessCollection,
+    Base: RangeReplaceableCollection,
+    Base.Element: PersistentModel
+  {
     ThrowsWritableRelationshipCollection(
       root: value,
       keyPath: keyPath,

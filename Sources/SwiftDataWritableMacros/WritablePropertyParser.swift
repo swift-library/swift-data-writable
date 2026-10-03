@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftSyntax
 import SwiftSyntaxMacros
 
@@ -164,7 +167,8 @@ extension TypeSyntax {
     }
 
     if let optionalType = self.as(OptionalTypeSyntax.self),
-      let modelType = optionalType.wrappedType.bareSingleModelType {
+      let modelType = optionalType.wrappedType.bareSingleModelType
+    {
       return SingleModelType(modelType: modelType, isOptional: true)
     }
 

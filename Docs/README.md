@@ -5,7 +5,7 @@ SwiftDataWritable documentation is split by role.
 - [Architecture](Architecture/README.md): current package structure,
   constraints, and runtime semantics.
 - [Reference](Reference/README.md): supported wrapper and macro combinations,
-  generated writable surfaces, and method semantics.
+  generated writable surfaces, method semantics and the release guide.
 - [API documentation](../Sources/SwiftDataWritable/SwiftDataWritable.docc/SwiftDataWritable.md):
   DocC entry point for package consumers.
 - [README](../README.md): public package overview and quick-start examples.

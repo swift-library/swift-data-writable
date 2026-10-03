@@ -1,0 +1,52 @@
+{
+  "repository": "swift-library/swift-data-writable",
+  "version_file": "VERSION",
+  "version_pattern": "^([^\\n]+)\\n?$",
+  "changelog": "CHANGELOG.md",
+  "check_command": "Scripts/check",
+  "minimum_swift": "6.2",
+  "ci": {
+    "include": [
+      {
+        "name": "macos-15-swift-6.2",
+        "runner": "macos-15",
+        "xcode": "26.0",
+        "command": "Scripts/check --compiler-check"
+      },
+      {
+        "name": "macos-26-swift-6.3",
+        "runner": "macos-26",
+        "xcode": "26.6",
+        "command": "Scripts/check --compiler-check"
+      },
+      {
+        "name": "strict-format",
+        "runner": "macos-26",
+        "xcode": "26.6",
+        "command": "Scripts/check --format-check"
+      }
+    ]
+  },
+  "platforms": {
+    "iOS": [
+      18,
+      26,
+      27
+    ],
+    "macOS": [
+      15,
+      26,
+      27
+    ],
+    "tvOS": [
+      18,
+      26,
+      27
+    ],
+    "watchOS": [
+      11,
+      26,
+      27
+    ]
+  }
+}

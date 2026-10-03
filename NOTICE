@@ -1,0 +1,9 @@
+SwiftDataWritable
+Copyright (c) 2026 Xudong Xu
+
+Licensed under Apache License 2.0 with the Swift Runtime Library Exception.
+See LICENSE for the complete terms.
+
+SwiftSyntax is a package dependency, not incorporated source. Its license and
+copyright notices remain in the upstream package:
+https://github.com/swiftlang/swift-syntax

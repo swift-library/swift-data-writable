@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftData
 
 /// Error-transparent write actions for a SwiftData query collection.
 ///
 /// `ThrowsWritableModelCollection` mirrors `WritableModelCollection`, but
 /// autosave failures are thrown to the caller.
+// The write overloads differ by closure arity within this type.
+// swift-format-ignore: AmbiguousTrailingClosureOverload
 public struct ThrowsWritableModelCollection<Base: Sequence>
 where Base.Element: PersistentModel {
   /// The model type contained in the query collection.

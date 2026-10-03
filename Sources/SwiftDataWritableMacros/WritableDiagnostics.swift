@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
@@ -31,7 +34,8 @@ enum WritableDiagnostic: String, DiagnosticMessage {
     case .supportedCollectionType:
       return "@Writable supports [Model] or Array<Model> query results."
     case .supportedModelType:
-      return "@Writable supports model properties, optional model properties, or @Query-backed array results."
+      return
+        "@Writable supports model properties, optional model properties, or @Query-backed array results."
     case .relationshipUnsupported:
       return
         "@Writable is not for @Relationship fields. Project relationships from a writable owner model or use domain methods instead."

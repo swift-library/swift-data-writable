@@ -1,15 +1,18 @@
 // swift-tools-version: 6.2
 
+// SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+// Copyright (c) 2026 Xudong Xu
+
 import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
   name: "swift-data-writable",
   platforms: [
-    .iOS(.v17),
-    .macOS(.v14),
-    .tvOS(.v17),
-    .watchOS(.v10),
+    .iOS(.v18),
+    .macOS(.v15),
+    .tvOS(.v18),
+    .watchOS(.v11),
   ],
   products: [
     .library(
