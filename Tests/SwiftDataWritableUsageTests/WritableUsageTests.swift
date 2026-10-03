@@ -525,6 +525,7 @@ private struct AutosaveWritableBookRelationshipView: View {
 @MainActor
 private final class WritableContextProbe {
   var didAppear = false
+  var didDisappear = false
 }
 
 private struct WritableContextProbeView: View {
@@ -551,6 +552,9 @@ private struct WritableContextProbeView: View {
         probe.didAppear = true
         didAppend = true
         $persons.append(Person(name: "Hosted Person"))
+      }
+      .onDisappear {
+        probe.didDisappear = true
       }
   }
 }
@@ -585,13 +589,13 @@ struct WritableUsageTests {
 
   #if canImport(AppKit) || canImport(UIKit)
     @MainActor
-    @Test func writableProjectionUsesHostedModelContext() throws {
+    @Test func writableProjectionUsesHostedModelContext() async throws {
       let container = try makeContainer()
       let probe = WritableContextProbe()
       let view = WritableContextProbeView(probe: probe)
         .modelContainer(container)
       #if canImport(AppKit)
-        let hostingView = NSHostingView(rootView: view)
+        let hosting = NSHostingView(rootView: AnyView(view))
         let window = NSWindow(
           contentRect: NSRect(x: 0, y: 0, width: 10, height: 10),
           styleMask: .borderless,
@@ -600,14 +604,16 @@ struct WritableUsageTests {
         )
         // Swift owns this window; close must not release it a second time.
         window.isReleasedWhenClosed = false
-        window.contentView = hostingView
+        window.contentView = hosting
         window.orderFrontRegardless()
         defer {
+          window.contentView = nil
           window.close()
         }
       #elseif canImport(UIKit)
+        let hosting = UIHostingController(rootView: AnyView(view))
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
-        window.rootViewController = UIHostingController(rootView: view)
+        window.rootViewController = hosting
         window.makeKeyAndVisible()
         defer {
           window.isHidden = true
@@ -618,12 +624,20 @@ struct WritableUsageTests {
       var names = [String]()
       let deadline = Date().addingTimeInterval(2)
       repeat {
-        _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        try await Task.sleep(for: .milliseconds(10))
         names = try fetchPeople(in: container.mainContext).map(\.name)
       } while !names.contains("Hosted Person") && Date() < deadline
 
       #expect(probe.didAppear)
       #expect(names.contains("Hosted Person"))
+      // Detach Query observers while their ModelContainer is still alive.
+      hosting.rootView = AnyView(EmptyView())
+      let disappearanceDeadline = Date().addingTimeInterval(2)
+      repeat {
+        try await Task.sleep(for: .milliseconds(10))
+      } while !probe.didDisappear && Date() < disappearanceDeadline
+      #expect(probe.didDisappear)
+      #expect(try fetchPeople(in: container.mainContext).map(\.name).contains("Hosted Person"))
     }
 
   #endif
