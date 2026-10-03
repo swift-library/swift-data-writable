@@ -30,6 +30,7 @@ public final class Child {
 @MainActor
 public final class ContextProbe {
   public var didAppear = false
+  public var didDisappear = false
   public init() {}
 }
 
@@ -53,6 +54,9 @@ public struct ConsumerView: View {
         didInsert = true
         probe.didAppear = true
         try? $entries.append(Entry(title: "Hosted", rank: 1))
+      }
+      .onDisappear {
+        probe.didDisappear = true
       }
   }
 }

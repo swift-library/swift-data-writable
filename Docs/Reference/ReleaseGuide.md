@@ -19,6 +19,9 @@ receipts and logs as acceptance evidence.
 The DocC archive is preserved as a tarball with its checksum. Consumer evidence
 includes the generated manifest, dependency lock, logs and receipt; build
 directories stay outside the CI artifact.
+CI installs simulator components matching its selected Xcode SDKs with
+`Scripts/prepare-ci-platforms` before validation. This environment preparation
+is separate from the read-only acceptance checks.
 
 The local consumer check uses a fresh dependency graph. Before publication, push
 the candidate and separately verify its remote revision:
