@@ -10,7 +10,7 @@
       {
         "name": "macos-15-swift-6.2",
         "runner": "macos-15",
-        "xcode": "26.0",
+        "xcode": "26.0.1",
         "command": "Scripts/check --compiler-check"
       },
       {

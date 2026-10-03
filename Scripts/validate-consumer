@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--build-platforms", action="store_true")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
+    checker_digest = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     root = Path(__file__).resolve().parent.parent
     config = json.loads((root / ".github/release.json").read_text())
     if args.revision and not re.fullmatch(r"[0-9a-f]{40}", args.revision):
@@ -64,11 +65,13 @@ def main():
 
     def run(name, command):
         print(name, flush=True)
-        with (output / (name + ".log")).open("w") as log:
+        log_path = output / (name + ".log")
+        with log_path.open("w") as log:
             result = subprocess.run(command, cwd=package, stdout=log, stderr=subprocess.STDOUT, timeout=1800)
         checks.append({"name": name, "exit_status": result.returncode})
         if result.returncode:
-            raise RuntimeError(name + " failed; inspect " + str(output / (name + ".log")))
+            print("\n".join(log_path.read_text(errors="replace").splitlines()[-80:]), file=sys.stderr)
+            raise RuntimeError(name + " failed; inspect " + str(log_path))
 
     run("resolve", ["swift", "package", "resolve"])
     lock_path = package / "Package.resolved"
@@ -123,12 +126,15 @@ def main():
         sdk: subprocess.check_output(["xcrun", "--sdk", sdk, "--show-sdk-version"], text=True).strip()
         for sdk in ["macosx", "iphonesimulator", "appletvsimulator", "watchsimulator"]
     }
+    if (json.loads(subprocess.check_output(version_command, text=True)) != version_info
+            or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != checker_digest):
+        raise RuntimeError("Source or checker changed during acceptance; validate a stable candidate")
     evidence = {
         "repository": config["repository"], "source": version_info, "dependency": dependency,
         "dependency_pins": lock["pins"],
         "dependency_lock_sha256": hashlib.sha256(lock_path.read_bytes()).hexdigest(),
         "consumer_manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
-        "checker_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "checker_sha256": checker_digest,
         "os": platform.platform(),
         "swift": subprocess.check_output(["swift", "--version"], text=True).strip(),
         "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True).strip(),
