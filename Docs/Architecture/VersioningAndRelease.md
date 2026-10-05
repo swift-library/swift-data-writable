@@ -1,7 +1,7 @@
 # Versioning and Release
 
 SwiftDataWritable adopts the organization's
-[versioning and release principles](https://github.com/swift-library/.github/blob/298bf0f90708d264db72afb9469613aeaa358a55/Documentation/Architecture/VersioningAndRelease.md).
+[versioning standard](https://github.com/swift-library/.github/blob/master/VERSIONING.md).
 This document owns the package-specific version, compatibility surface and
 validation requirements. The default branch is `master`.
 
@@ -12,9 +12,10 @@ product. A nonempty `CHANGELOG.md` entry describes that version. Tags use
 `vVERSION` and bind one clean accepted commit; published tags stay immutable.
 Version selection is manual and `Scripts/validate-version` only checks inputs.
 
-Compatible fixes increase PATCH, compatible features increase MINOR. Breaking
-API, macro behavior, save semantics or requirements increase MINOR during 0.x
-and MAJOR from 1.0. Consumers use a next-minor range during 0.x. Documentation,
+During 0.x, fixes and compatible additions increase PATCH, and breaking API,
+macro behavior, save semantics or requirements increase MINOR. From 1.0,
+compatible additions increase MINOR and breaking changes increase MAJOR.
+Consumers use a next-minor range during 0.x. Documentation,
 formatting and CI changes alone do not force a release.
 
 Compatibility includes macro spellings, generated projection types, public runtime
