@@ -69,7 +69,7 @@ effects or save/writeback timing:
 @Writable(
   autosave: true,
   throws: true,
-  transaction: Book.writeback
+  transaction: Document.writeback
 )
 private var document: Document
 ```
@@ -80,7 +80,38 @@ runtime transaction, invokes it around the mutation, and does not also call
 where `Value` is the single model or the query collection array.
 Use a non-overloaded function directly; use a function-like value with
 `callAsFunction` overloads when one short public name should handle multiple
-value shapes.
+value shapes:
+
+```swift
+struct DocumentWriteback {
+  func callAsFunction(
+    _ context: ModelContext,
+    _ document: Document,
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
+    document.revision += 1
+    try context.save()
+  }
+
+  func callAsFunction(
+    _ context: ModelContext,
+    _ documents: [Document],
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
+    for document in documents {
+      document.revision += 1
+    }
+    try context.save()
+  }
+}
+
+extension Document {
+  static var writeback: DocumentWriteback { DocumentWriteback() }
+}
+```
+
 The transaction runs in the same isolation context as the writable mutation.
 Successful hooks invoke the mutation synchronously and propagate its errors.
 Throw before invoking it to reject the mutation. Returning successfully without

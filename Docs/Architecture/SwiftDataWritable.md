@@ -148,47 +148,45 @@ body, transaction, or autosave errors.
 
 SwiftData's own autosave policy remains SwiftData-owned.
 
-Downstream packages define transaction functions on the concrete domain type
-when the function name is not overloaded:
+Downstream packages pass a transaction function directly when its name is not
+overloaded. If a domain wants one short public name for several value shapes,
+it exposes a function-like value whose `callAsFunction` methods are overloaded.
+Swift type-checks attribute arguments before macro expansion, so a bare
+overloaded function name cannot use the property type annotation for overload
+resolution:
 
 ```swift
-extension Book {
-  static func writeback(
+struct DocumentWriteback {
+  func callAsFunction(
     _ context: ModelContext,
     _ document: Document,
     _ mutation: () throws -> Void
   ) throws {
-    try document.book.performChanges {
-      try mutation()
-    }
+    try mutation()
+    document.revision += 1
+    try context.save()
   }
 
-  static func writeback(
+  func callAsFunction(
     _ context: ModelContext,
     _ documents: [Document],
     _ mutation: () throws -> Void
   ) throws {
-    guard let document = documents.first else {
-      try mutation()
-      try context.save()
-      return
+    try mutation()
+    for document in documents {
+      document.revision += 1
     }
-
-    try document.book.performChanges {
-      try mutation()
-    }
+    try context.save()
   }
+}
+
+extension Document {
+  static var writeback: DocumentWriteback { DocumentWriteback() }
 }
 ```
 
 The public `WritableTransaction<Value>` type remains available for runtime
 bridges such as `@Bindable`, but it is not the primary macro-facing API.
-
-If a domain wants one short public name for several value shapes, it should
-expose a function-like value whose `callAsFunction` methods are overloaded.
-Swift type-checks attribute arguments before macro expansion, so a bare
-overloaded function name cannot use the property type annotation for overload
-resolution.
 
 ## Relationship Semantics
 
