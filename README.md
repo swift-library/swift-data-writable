@@ -55,7 +55,7 @@ Add the package and the `SwiftDataWritable` product to `Package.swift`:
 dependencies: [
   .package(
     url: "https://github.com/swift-library/swift-data-writable.git",
-    .upToNextMinor(from: "0.1.0")
+    .upToNextMinor(from: "0.1.1")
   ),
 ],
 targets: [
