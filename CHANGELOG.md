@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- The DocC article and reference documentation show a transaction value with
+  `callAsFunction` overloads. The previous example passed an overloaded static
+  function, which Swift cannot resolve in a macro argument. The usage tests
+  now compile and run the documented code.
+- The README pins `.upToNextMinor(from: "0.1.1")`.
+
 ## 0.1.0
 
 - Introduce `@Writable` peer projections for SwiftData query arrays, individual
