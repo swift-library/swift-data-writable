@@ -250,33 +250,50 @@ once, while projection methods stay thin:
 @Writable(
   autosave: true,
   throws: true,
-  transaction: Book.writeback
+  transaction: Document.writeback
 )
 private var document: Document
 ```
 
 The macro infers the value signature from the property annotation and builds
-the runtime wrapper internally:
-
-```swift
-static func writeback(
-  _ context: ModelContext,
-  _ document: Document,
-  _ mutation: () throws -> Void
-) throws
-
-static func writeback(
-  _ context: ModelContext,
-  _ documents: [Document],
-  _ mutation: () throws -> Void
-) throws
-```
+the runtime wrapper internally. A model property's transaction receives the
+model, and a query collection's transaction receives the affected models.
 
 Pass a non-overloaded function directly. If a domain wants one short public
 name for multiple shapes, expose a function-like value with `callAsFunction`
 overloads. Attribute arguments are type-checked before macro expansion, so a
 bare overloaded function name is ambiguous before the macro can apply the
-property type.
+property type:
+
+```swift
+struct DocumentWriteback {
+  func callAsFunction(
+    _ context: ModelContext,
+    _ document: Document,
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
+    document.revision += 1
+    try context.save()
+  }
+
+  func callAsFunction(
+    _ context: ModelContext,
+    _ documents: [Document],
+    _ mutation: () throws -> Void
+  ) throws {
+    try mutation()
+    for document in documents {
+      document.revision += 1
+    }
+    try context.save()
+  }
+}
+
+extension Document {
+  static var writeback: DocumentWriteback { DocumentWriteback() }
+}
+```
 
 Manual runtime bridges, such as `@Bindable`'s `$model.throwsWritable(...)`, do
 not go through macro expansion. Pass `WritableTransaction<Value>(body:)` there
