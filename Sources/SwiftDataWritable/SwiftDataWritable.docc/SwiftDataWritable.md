@@ -1,5 +1,10 @@
 # ``SwiftDataWritable``
 
+@Metadata {
+  @PageImage(purpose: icon, source: "Logo", alt: "swift-data-writable logo")
+  @PageColor(blue)
+}
+
 Add projected write actions to SwiftData `@Query` collections and single
 SwiftData models.
 

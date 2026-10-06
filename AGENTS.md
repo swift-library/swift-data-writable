@@ -40,3 +40,31 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 - Update docs when public macro behavior, generated projection semantics, or
   save/transaction behavior changes.
 - Validate Swift package changes with package-local build or test checks.
+
+## Code Review Rules
+
+### Compatibility and versioning
+
+- Flag a change to public API or observable behavior, including a raised
+  minimum platform or Swift version, without the change record and version
+  bump `Docs/Architecture/VersioningAndRelease.md` requires. Safe
+  path: record the change under the next version with that bump.
+
+### Claims
+
+- Flag README, DocC, or release-note statements that the code and tests do
+  not support: capabilities that do not exist, existing behavior described as
+  new, or platforms CI does not build. Safe path: describe what the code
+  shows.
+
+### Public documentation
+
+- Flag a new public symbol without a documentation comment, and public prose
+  that compares the package with other projects or describes internal
+  process. Safe path: document the symbol, and describe only this package's
+  own behavior.
+
+### Tests
+
+- Flag a behavior change without a test that would fail before the change.
+  Safe path: add the test beside the existing suite for that behavior.
