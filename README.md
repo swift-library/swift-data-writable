@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Docs/Assets/Logo.svg" width="160" alt="swift-data-writable logo">
+  <img src="Documentation/Assets/Logo.svg" width="160" alt="swift-data-writable logo">
 </p>
 
 <h1 align="center">swift-data-writable</h1>
@@ -12,7 +12,7 @@
   <a href="https://github.com/swift-library/swift-data-writable/actions/workflows/ci.yml"><img src="https://github.com/swift-library/swift-data-writable/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI"></a>
   <img src="https://img.shields.io/badge/Swift-6.2%2B-F05138" alt="Swift 6.2+">
   <img src="https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B%20%7C%20tvOS%2018%2B%20%7C%20watchOS%2011%2B-lightgrey" alt="Platforms: iOS 18+ | macOS 15+ | tvOS 18+ | watchOS 11+">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0 WITH Swift-exception"></a>
+  <a href="LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0 WITH Swift-exception"></a>
 </p>
 
 [Overview](#overview) · [Install](#install) · [Quick start](#quick-start) ·
@@ -160,7 +160,7 @@ Relationship projections from a throwing surface stay throwing.
 The model and relationship element types must conform to `PersistentModel`.
 The macro validates the property syntax, and the generated generic constraints
 let the compiler check the model conformance. The
-[writable combinations reference](Docs/Reference/WritableCombinations.md)
+[writable combinations reference](Documentation/Reference/WritableCombinations.md)
 describes each shape and method in detail.
 
 ### Query collections
@@ -551,22 +551,22 @@ current system maintenance window is iOS 18, 26, and 27; macOS 15, 26, and 27;
 tvOS 18, 26, and 27; and watchOS 11, 26, and 27. The macro implementation uses
 SwiftSyntax 602, and `Package.resolved` records the revision used for
 validation. The
-[versioning and release policy](Docs/Architecture/VersioningAndRelease.md)
+[versioning and release policy](Documentation/Architecture/VersioningAndRelease.md)
 describes compatibility and maintenance: the latest released line receives
 fixes, and older-line backports are evaluated per issue.
 
 ## Documentation
 
-- [Writable combinations](Docs/Reference/WritableCombinations.md): every
+- [Writable combinations](Documentation/Reference/WritableCombinations.md): every
   supported and rejected property shape, its generated surface, and the meaning
   of each method.
-- [Architecture](Docs/Architecture/SwiftDataWritable.md): targets, the macro
+- [Architecture](Documentation/Architecture/SwiftDataWritable.md): targets, the macro
   and runtime boundary, and save, relationship, and reordering semantics.
 - [API documentation](Sources/SwiftDataWritable/SwiftDataWritable.docc/SwiftDataWritable.md):
   the DocC catalog.
-- [Versioning and release](Docs/Architecture/VersioningAndRelease.md):
+- [Versioning and release](Documentation/Architecture/VersioningAndRelease.md):
   compatibility, platform support, and maintenance.
-- [Release guide](Docs/Reference/ReleaseGuide.md): validation and publication
+- [Release guide](Documentation/Reference/ReleaseGuide.md): validation and publication
   steps for maintainers.
 - [Changelog](CHANGELOG.md)
 
@@ -579,6 +579,6 @@ private route in [SECURITY.md](SECURITY.md).
 ## License
 
 swift-data-writable is available under the Apache License 2.0 with the Swift
-Runtime Library Exception. See [LICENSE](LICENSE) and [NOTICE](NOTICE). NOTICE
+Runtime Library Exception. See [LICENSE.txt](LICENSE.txt) and [NOTICE](NOTICE). NOTICE
 also records SwiftSyntax, a package dependency whose own license and notices
 remain in its package.

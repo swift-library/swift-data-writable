@@ -111,8 +111,8 @@ struct DocumentationSnippetTests {
 
     for path in [
       "Sources/SwiftDataWritable/SwiftDataWritable.docc/SwiftDataWritable.md",
-      "Docs/Reference/WritableCombinations.md",
-      "Docs/Architecture/SwiftDataWritable.md",
+      "Documentation/Reference/WritableCombinations.md",
+      "Documentation/Architecture/SwiftDataWritable.md",
     ] {
       let markdown = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
       let blocks = swiftCodeBlocks(in: markdown).filter {
