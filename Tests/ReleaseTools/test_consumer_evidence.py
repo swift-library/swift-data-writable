@@ -19,7 +19,9 @@ class ConsumerEvidenceTests(unittest.TestCase):
             output = Path(temporary) / "consumer"
             arguments = ["validate-consumer", "--local", "--output", str(output)]
             with patch("sys.argv", arguments), \
-                    patch("subprocess.check_output", return_value='{"commit":"fixture","dirty":true}'), \
+                    patch.dict(consumer["main"].__globals__, {
+                        "source_snapshot": lambda root: {"commit": "fixture", "dirty": True}
+                    }), \
                     patch("subprocess.run", side_effect=RuntimeError("stop before compilation")):
                 with self.assertRaisesRegex(RuntimeError, "stop before compilation"):
                     consumer["main"]()

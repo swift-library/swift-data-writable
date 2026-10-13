@@ -14,7 +14,7 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 ## Task Route
 
 - Use `README.md` as the user-facing package manual.
-- Use `Docs/README.md` and `Docs/Architecture/` for package architecture and
+- Use `Documentation/README.md` and `Documentation/Architecture/` for package architecture and
   current truth when they exist.
 - Use `Package.swift` for package graph, products, targets, and dependencies.
 - Keep source changes under `Sources/` and tests under `Tests/`.
@@ -23,7 +23,7 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 
 - `AGENTS.md` is the agent guide for package work.
 - `README.md` owns user-facing behavior and examples.
-- `Docs/Architecture/*` owns current architecture truth when present.
+- `Documentation/Architecture/*` owns current architecture truth when present.
 - `Package.swift` owns SwiftPM package structure.
 
 ## Boundary Guardrails
@@ -47,7 +47,7 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 
 - Flag a change to public API or observable behavior, including a raised
   minimum platform or Swift version, without the change record and version
-  bump `Docs/Architecture/VersioningAndRelease.md` requires. Safe
+  bump `Documentation/Architecture/VersioningAndRelease.md` requires. Safe
   path: record the change under the next version with that bump.
 
 ### Claims

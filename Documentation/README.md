@@ -11,4 +11,4 @@ SwiftDataWritable documentation is split by role.
 - [README](../README.md): public package overview and quick-start examples.
 
 Design notes that are not current truth should live outside architecture
-documents until they are accepted and reflected in `Docs/Architecture`.
+documents until they are accepted and reflected in `Documentation/Architecture`.

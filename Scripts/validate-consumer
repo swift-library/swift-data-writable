@@ -17,6 +17,24 @@ import sys
 import uuid
 
 
+def source_snapshot(root):
+    def git(*arguments):
+        return subprocess.check_output(["git", "-C", str(root), *arguments], text=True).strip()
+
+    digest = hashlib.sha256()
+    for name in sorted(set(git("ls-files", "-co", "--exclude-standard", "-z").split("\0")) - {""}):
+        path = root / name
+        if path.is_file():
+            digest.update(name.encode() + b"\0" + path.read_bytes() + b"\0")
+    return {
+        "version": (root / "VERSION").read_text().strip(),
+        "commit": git("rev-parse", "HEAD"),
+        "tree": git("rev-parse", "HEAD^{tree}"),
+        "dirty": bool(git("status", "--porcelain", "--untracked-files=normal")),
+        "working_tree_sha256": digest.hexdigest(),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     reference = parser.add_mutually_exclusive_group(required=True)
@@ -32,10 +50,9 @@ def main():
     config = json.loads((root / ".github/release.json").read_text())
     if args.revision and not re.fullmatch(r"[0-9a-f]{40}", args.revision):
         parser.error("Use the complete candidate commit SHA")
-    version_command = [str(root / "Scripts/validate-version"), "--json"]
-    if not args.local:
-        version_command += ["--require-clean"]
-    version_info = json.loads(subprocess.check_output(version_command, text=True))
+    version_info = source_snapshot(root)
+    if not args.local and version_info["dirty"]:
+        parser.error("Remote acceptance requires a clean committed source tree")
     if args.version and args.version != version_info["version"]:
         parser.error("Version acceptance must use the declared package version")
     if args.revision and args.revision != version_info["commit"]:
@@ -127,7 +144,7 @@ def main():
         sdk: subprocess.check_output(["xcrun", "--sdk", sdk, "--show-sdk-version"], text=True).strip()
         for sdk in ["macosx", "iphonesimulator", "appletvsimulator", "watchsimulator"]
     }
-    if (json.loads(subprocess.check_output(version_command, text=True)) != version_info
+    if (source_snapshot(root) != version_info
             or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != checker_digest):
         raise RuntimeError("Source or checker changed during acceptance; validate a stable candidate")
     evidence = {
