@@ -14,7 +14,7 @@ not restate those rules.
 
 | Shipped component | Version meaning | Version source | Mirrors and derived fields | Update and read-only check |
 | --- | --- | --- | --- | --- |
-| `SwiftDataWritable` | Product version | [`VERSION`](../../VERSION) | [`CHANGELOG.md`](../../CHANGELOG.md) records release notes; [`.github/release.json`](../../.github/release.json) selects the version and changelog files. | Not established. |
+| `SwiftDataWritable` | Product version | [`VERSION`](../../VERSION), named by `version_file` in [`.github/release.json`](../../.github/release.json) | [`CHANGELOG.md`](../../CHANGELOG.md) records release notes; [`.github/release.json`](../../.github/release.json) selects the version and changelog files. | Not established. |
 
 ## Compatibility Surface
 
@@ -88,7 +88,7 @@ with the release evidence.
 | Version update and check | Not established. | Not established. |
 | Candidate validation and build | `Scripts/check`; CI uses `Scripts/check --compiler-check` and `Scripts/check --format-check`, with `Scripts/prepare-ci-platforms` before compiler validation. | Local toolchain and selected Xcode SDKs. |
 | Status and interrupted-run recovery | Inspect each consumer run's `provenance.json`; use a new output path for each acceptance run. | Consumer output. |
-| Acceptance and publication | Remote and tagged consumer commands below. | Repository push access for the candidate; installed SDKs and runtimes. |
+| Acceptance and publication | Run [`Release`](../../.github/workflows/release.yml) with the accepted tag; it validates the tag and publishes the GitHub release. Remote and tagged consumer commands below. | Repository push access for the candidate; installed SDKs and runtimes; repository write access to run workflows |
 | Cleanup | Not established. | Not established. |
 
 Remote candidate consumption:
