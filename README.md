@@ -99,7 +99,7 @@ current system maintenance window is iOS 18, 26, and 27; macOS 15, 26, and 27;
 tvOS 18, 26, and 27; and watchOS 11, 26, and 27. The macro implementation uses
 SwiftSyntax 602, and `Package.resolved` records the revision used for
 validation. The
-[versioning and release policy](Documentation/Architecture/VersioningAndRelease.md)
+[release reference](Documentation/Reference/Release.md)
 describes compatibility and maintenance: the latest released line receives
 fixes, and older-line backports are evaluated per issue.
 
@@ -113,10 +113,7 @@ fixes, and older-line backports are evaluated per issue.
   and runtime boundary, and save, relationship, and reordering semantics.
 - [API documentation](Sources/SwiftDataWritable/SwiftDataWritable.docc/SwiftDataWritable.md):
   the DocC catalog.
-- [Versioning and release](Documentation/Architecture/VersioningAndRelease.md):
-  compatibility, platform support, and maintenance.
-- [Release guide](Documentation/Reference/ReleaseGuide.md): validation and publication
-  steps for maintainers.
+- [Release](Documentation/Reference/Release.md): release facts and mechanics; version rules are in VERSIONING.
 - [Changelog](CHANGELOG.md)
 
 ## Contributing

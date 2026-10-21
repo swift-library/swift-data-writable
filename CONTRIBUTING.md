@@ -1,8 +1,9 @@
 # Contributing
 
 Read [README](README.md) for usage, [Documentation/Architecture](Documentation/Architecture/README.md)
-for package semantics, and [the release policy](Documentation/Architecture/VersioningAndRelease.md)
-for compatibility and version decisions.
+for package semantics, and [Release](Documentation/Reference/Release.md) for
+release facts and mechanics. Version rules are in
+[VERSIONING](https://github.com/swift-library/.github/blob/master/VERSIONING.md).
 
 Work from `master`. Keep a change in its owning layer: macro syntax and
 diagnostics, runtime projections, documentation or tests. Preserve the distinction
