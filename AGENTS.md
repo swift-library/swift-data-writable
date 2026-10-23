@@ -45,8 +45,9 @@ Read `README.md` first for package purpose, public surface, and usage examples.
   save/transaction behavior changes.
 - Validate changes with `swift build`, `swift test`, `swift build -c release`,
   and `xcrun swift-format lint --strict --configuration .swift-format --recursive Package.swift Sources Tests`.
-- `.github/swift-package.json` owns the shared CI compiler matrix, formatting
-  paths, Apple platform builds, and DocC targets. Required checks are
+- `.github/swift-package.json` owns the single shared CI compiler entry
+  (Xcode 26.6 on macOS 26), formatting paths, Apple platform builds, and DocC
+  targets. The tools version and release minimum are Swift 6.3. Required checks are
   `policy / policy` and `validate / result`.
 
 ## Code Review Rules
@@ -56,8 +57,9 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 - Flag a change to the compatibility surface recorded in
   `Documentation/Reference/Release.md`, such as public API, observable
   behavior or a raised minimum platform or Swift version, without the
-  changelog entry and version bump VERSIONING requires. Safe path: record the
-  change under the next version with that bump.
+  changelog entry VERSIONING requires. Record breaking changes under
+  `## Unreleased` with a **Breaking** marker and the new minimums; assign the
+  version bump when preparing the release.
 
 ### Claims
 

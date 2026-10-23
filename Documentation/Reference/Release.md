@@ -28,16 +28,18 @@ compiler matrix, formatting paths, Apple platform builds, and DocC
 target. [`.github/release.json`](../../.github/release.json) declares the minimum
 Swift version and maintained system generations.
 
-The package requires Swift 6.2 and SwiftSyntax 602. Its SwiftData and SwiftUI
+The package requires Swift 6.3 and SwiftSyntax 602. Its SwiftData and SwiftUI
 integration requires iOS 18, macOS 15, tvOS 18 or watchOS 11.
 The maintained system window is iOS 18/26/27, macOS 15/26/27,
 tvOS 18/26/27 and watchOS 11/26/27.
 [`Package.resolved`](../../Package.resolved) identifies the dependency revisions.
 
-CI runs package tests and a release build on macOS 15 with Swift 6.2 and macOS 26
-with Swift 6.3. Strict formatting and the `SwiftDataWritable` DocC catalog use
-the last compiler entry. Apple jobs build the `swift-data-writable` scheme for
-iOS, tvOS and watchOS with the selected Xcode SDKs.
+CI runs package tests and a release build on macOS 26 with Xcode 26.6
+(Swift 6.3), the single compiler entry. Strict formatting and the
+`SwiftDataWritable` DocC catalog use the same toolchain. Apple jobs build the
+`swift-data-writable` scheme for iOS, tvOS and watchOS with its SDKs.
+Compile-time availability checking against these SDKs covers the declared
+deployment floors; CI tests run on the current macOS host.
 
 Package tests cover macro expansion, persistence, context isolation, SwiftUI
 context lookup, relationship transactions and detached-model errors. Apple SDK

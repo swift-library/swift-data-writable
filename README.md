@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/swift-library/swift-data-writable/actions/workflows/ci.yml"><img src="https://github.com/swift-library/swift-data-writable/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI"></a>
-  <img src="https://img.shields.io/badge/Swift-6.2%2B-F05138?style=flat" alt="Swift 6.2+">
+  <img src="https://img.shields.io/badge/Swift-6.3%2B-F05138?style=flat" alt="Swift 6.3+">
   <img src="https://img.shields.io/badge/platforms-iOS%2018%2B%20%7C%20macOS%2015%2B%20%7C%20tvOS%2018%2B%20%7C%20watchOS%2011%2B-lightgrey?style=flat" alt="Platforms: iOS 18+ | macOS 15+ | tvOS 18+ | watchOS 11+">
   <a href="LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat" alt="License: Apache-2.0 WITH Swift-exception"></a>
 </p>
@@ -90,13 +90,13 @@ The [usage guide](Documentation/Reference/Usage.md) covers the full example, pro
 
 ## Requirements
 
-- Swift 6.2 or later
+- Swift 6.3 or later
 - iOS 18 or later, macOS 15 or later, tvOS 18 or later, and watchOS 11 or
   later
 
-The compiler minimum is maintained independently of the platform window. The
-current system maintenance window is iOS 18, 26, and 27; macOS 15, 26, and 27;
-tvOS 18, 26, and 27; and watchOS 11, 26, and 27. The macro implementation uses
+The compiler minimum follows the latest stable Xcode used by shared CI,
+currently Xcode 26.6. The current system maintenance window is iOS 18, 26, and 27;
+macOS 15, 26, and 27; tvOS 18, 26, and 27; and watchOS 11, 26, and 27. The macro implementation uses
 SwiftSyntax 602, and `Package.resolved` records the revision used for
 validation. The
 [release reference](Documentation/Reference/Release.md)

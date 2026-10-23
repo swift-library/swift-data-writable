@@ -21,8 +21,9 @@ xcrun swift-format lint --strict --configuration .swift-format --recursive Packa
 ```
 
 [`.github/swift-package.json`](.github/swift-package.json) declares the shared
-CI compiler matrix, formatting paths, Apple platform builds, and DocC
-target. Required checks are `policy / policy` and `validate / result`.
+CI compiler, formatting paths, Apple platform builds, and DocC
+target. CI uses only Xcode 26.6 (Swift 6.3) on macOS 26; the package requires
+Swift 6.3 or later. Required checks are `policy / policy` and `validate / result`.
 
 External contributions are welcome. Use a Conventional Commit PR title such as
 `fix: correct save error propagation`. Maintainers follow the shared

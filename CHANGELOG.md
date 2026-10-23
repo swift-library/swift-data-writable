@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Breaking**: Require Swift 6.3 or later. Deployment minimums remain
+  macOS 15, iOS 18, tvOS 18 and watchOS 11. Shared CI uses Xcode 26.6.
+
 ## 0.1.1
 
 - The DocC article and reference documentation show a transaction value with
