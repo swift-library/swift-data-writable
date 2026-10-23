@@ -11,10 +11,18 @@ between query snapshots, owner relationship membership and SwiftUI bindings.
 Describe the behavior being changed and include a regression test when a defect
 affects that behavior.
 
-Run `Scripts/check` before submitting a pull request. It checks platform declarations,
-strict two-space formatting, consumer tooling, Swift tests, the Release
-build, DocC compilation and an independent local consumer. Use `Scripts/check --format-check` or
-`Scripts/check --compiler-check` for the corresponding CI scope.
+Run these commands before submitting a pull request:
+
+```sh
+swift build
+swift test
+swift build -c release
+xcrun swift-format lint --strict --configuration .swift-format --recursive Package.swift Sources Tests
+```
+
+[`.github/swift-package.json`](.github/swift-package.json) declares the shared
+CI compiler matrix, formatting paths, Apple platform builds, and DocC
+target. Required checks are `policy / policy` and `validate / result`.
 
 External contributions are welcome. Use a Conventional Commit PR title such as
 `fix: correct save error propagation`. Maintainers follow the shared

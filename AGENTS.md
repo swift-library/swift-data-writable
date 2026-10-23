@@ -43,7 +43,11 @@ Read `README.md` first for package purpose, public surface, and usage examples.
 
 - Update docs when public macro behavior, generated projection semantics, or
   save/transaction behavior changes.
-- Validate Swift package changes with package-local build or test checks.
+- Validate changes with `swift build`, `swift test`, `swift build -c release`,
+  and `xcrun swift-format lint --strict --configuration .swift-format --recursive Package.swift Sources Tests`.
+- `.github/swift-package.json` owns the shared CI compiler matrix, formatting
+  paths, Apple platform builds, and DocC targets. Required checks are
+  `policy / policy` and `validate / result`.
 
 ## Code Review Rules
 

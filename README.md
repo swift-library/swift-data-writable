@@ -119,8 +119,8 @@ fixes, and older-line backports are evaluated per issue.
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and run
-`Scripts/check` before submitting changes. Report vulnerabilities through the
-private route in [SECURITY.md](SECURITY.md).
+the local validation commands there before submitting changes. Report
+vulnerabilities through the private route in [SECURITY.md](SECURITY.md).
 
 ## License
 
