@@ -590,6 +590,17 @@ struct WritableUsageTests {
   #if canImport(AppKit) || canImport(UIKit)
     @MainActor
     @Test func writableProjectionUsesHostedModelContext() async throws {
+      try await verifyHostedModelContext()
+
+      let container = try makeContainer()
+      let context = ModelContext(container)
+      context.insert(Person(name: "After hosting"))
+      try context.save()
+      #expect(try fetchPeople(in: context).map(\.name) == ["After hosting"])
+    }
+
+    @MainActor
+    private func verifyHostedModelContext() async throws {
       let container = try makeContainer()
       let probe = WritableContextProbe()
       let view = WritableContextProbeView(probe: probe)

@@ -37,16 +37,23 @@ struct WritableModelCollectionTests {
   }
 
   @MainActor
-  @Test func explicitSavePersistsInsertedModels() throws {
+  @Test func explicitSavePersistsInsertedAndDeletedModels() throws {
     let container = try makeContainer()
     let context = ModelContext(container)
     let actions = WritableModelCollection(value: [Person](), context: context)
 
-    actions.append(Person(name: "A"))
+    let person = Person(name: "A")
+    actions.append(person)
+    #expect(context.hasChanges)
     try actions.save()
 
     let verificationContext = ModelContext(container)
     #expect(try fetchPeople(in: verificationContext).map(\.name) == ["A"])
+
+    actions.delete(person)
+    try actions.save()
+
+    #expect(try fetchPeople(in: ModelContext(container)).isEmpty)
   }
 
   @MainActor

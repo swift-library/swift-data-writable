@@ -298,6 +298,34 @@ struct WritableRelationshipCollectionTests {
 @Suite
 struct ThrowsWritableRelationshipCollectionTests {
   @MainActor
+  @Test func relationshipChainPersistsThroughRootTransaction() throws {
+    let container = try makeRelationshipContainer()
+    let context = ModelContext(container)
+    let book = Book(title: "Library")
+    context.insert(book)
+    try context.save()
+    var transactionCalls = 0
+    let actions = ThrowsWritableModel(
+      value: book,
+      context: context,
+      autosave: true,
+      transaction: WritableTransaction<Book> { context, _, mutation in
+        transactionCalls += 1
+        try mutation()
+        try context.save()
+      }
+    )
+
+    try actions.tags.append(Tag(name: "Draft"))
+    try actions.tags[0].write { tag, _ in
+      tag.name = "Saved"
+    }
+
+    #expect(transactionCalls == 2)
+    #expect(try fetchTags(in: ModelContext(container)).map(\.name) == ["Saved"])
+  }
+
+  @MainActor
   @Test func autosaveRelationshipAppendSavesExistingRelatedModelMembership() throws {
     let container = try makeRelationshipContainer()
     let context = ModelContext(container)
