@@ -8,7 +8,7 @@ Read `README.md` first for package purpose, public surface, and usage examples.
   before changing reusable files.
 - Change the owning layer: macro surface, runtime projection, documentation, or
   tests.
-- Keep source evidence and package semantics traceable to this package, not to
+- Keep cited sources and package semantics traceable to this package, not to
   one local experiment.
 
 ## Task Route
